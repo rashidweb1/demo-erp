@@ -31,7 +31,7 @@ class Public_leads_api extends AdminController
             redirect(admin_url('public_leads_api'));
         }
 
-        $data['title']      = 'Public Leads API';
+        $data['title']      = 'Leads API';
         $data['keys']       = $this->public_leads_api_model->get_keys();
         $data['logs']       = $this->public_leads_api_model->recent_logs(25);
         $data['enabled']    = (int) get_option('public_leads_api_enabled', 1);
