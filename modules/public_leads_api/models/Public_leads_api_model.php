@@ -155,6 +155,14 @@ class Public_leads_api_model extends App_Model
 
     private function get_default_status_id(): int
     {
+        // Prefer explicit "New" status if it exists
+        $this->db->where('LOWER(name)', 'new lead');
+        $row = $this->db->get(db_prefix() . 'leads_status')->row();
+        if ($row) {
+            return (int) $row->id;
+        }
+
+        // Fallback to first by order
         $this->db->order_by('statusorder', 'asc');
         $status = $this->db->get(db_prefix() . 'leads_status')->row();
 
