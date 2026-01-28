@@ -213,7 +213,7 @@ Content-Type: application/json</pre>
                 <h5>Sources</h5>
                 <ul class="list-unstyled mtop10">
                   <?php foreach ($sources as $source): ?>
-                    <li><?php echo html_escape($source['name']); ?></li>
+                    <li><code><?php echo (int) $source['id']; ?></code> <?php echo html_escape($source['name']); ?></li>
                   <?php endforeach; ?>
                 </ul>
               </div>
@@ -221,7 +221,7 @@ Content-Type: application/json</pre>
                 <h5>Statuses</h5>
                 <ul class="list-unstyled mtop10">
                   <?php foreach ($statuses as $status): ?>
-                    <li><?php echo html_escape($status['name']); ?></li>
+                    <li><code><?php echo (int) $status['id']; ?></code> <?php echo html_escape($status['name']); ?></li>
                   <?php endforeach; ?>
                 </ul>
               </div>
@@ -229,7 +229,7 @@ Content-Type: application/json</pre>
                 <h5>Staff (Assignable)</h5>
                 <ul class="list-unstyled mtop10">
                   <?php foreach ($staff as $member): ?>
-                    <li><code><?php echo (int) $member['id']; ?></code> — <?php echo html_escape($member['name']); ?></li>
+                    <li><code><?php echo (int) $member['id']; ?></code> <?php echo html_escape($member['name']); ?></li>
                   <?php endforeach; ?>
                 </ul>
               </div>
@@ -237,12 +237,12 @@ Content-Type: application/json</pre>
                 <h5>Tags</h5>
                 <ul class="list-unstyled mtop10">
                   <?php foreach ($tags as $tag): ?>
-                    <li><?php echo html_escape($tag['name']); ?></li>
+                    <li><code><?php echo (int) $tag['id']; ?></code> <?php echo html_escape($tag['name']); ?></li>
                   <?php endforeach; ?>
                 </ul>
               </div>
             </div>
-            <p class="text-muted mtop10">Use staff ID for <code>assigned</code>; other fields accept the names shown.</p>
+            <p class="text-muted mtop10">Use staff ID for <code>assigned</code>; other fields accept either the IDs or names shown.</p>
           </div>
         </div>
       </div>

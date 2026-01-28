@@ -66,7 +66,7 @@ class Public_leads_api_model extends App_Model
     public function list_statuses(): array
     {
         return $this->db->select('id, name')
-                        ->order_by('statusorder', 'asc')
+                        ->order_by('id', 'asc')
                         ->get(db_prefix() . 'leads_status')
                         ->result_array();
     }
@@ -74,7 +74,7 @@ class Public_leads_api_model extends App_Model
     public function list_sources(): array
     {
         return $this->db->select('id, name')
-                        ->order_by('name', 'asc')
+                        ->order_by('id', 'asc')
                         ->get(db_prefix() . 'leads_sources')
                         ->result_array();
     }
@@ -82,7 +82,7 @@ class Public_leads_api_model extends App_Model
     public function list_tags(): array
     {
         return $this->db->select('id, name')
-                        ->order_by('name', 'asc')
+                        ->order_by('id', 'asc')
                         ->get(db_prefix() . 'tags')
                         ->result_array();
     }
@@ -90,8 +90,7 @@ class Public_leads_api_model extends App_Model
     public function list_staff(): array
     {
         return $this->db->select("staffid as id, CONCAT(firstname, ' ', lastname) as name", false)
-                        ->order_by('firstname', 'asc')
-                        ->order_by('lastname', 'asc')
+                        ->order_by('id', 'asc')
                         ->get(db_prefix() . 'staff')
                         ->result_array();
     }
