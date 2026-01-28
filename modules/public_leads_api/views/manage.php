@@ -27,6 +27,11 @@
                 <input type="number" min="1" class="form-control" name="rate_window" id="rate_window" value="<?php echo html_escape($rate_window); ?>">
                 <p class="text-muted mtop5">Example: 120 requests per 10 minutes.</p>
               </div>
+              <div class="form-group">
+                <label for="blocked_ips">Blocked IPs</label>
+                <textarea class="form-control" name="blocked_ips" id="blocked_ips" rows="3" placeholder="one or more IPs, comma or newline separated"><?php echo html_escape($blocked_ips); ?></textarea>
+                <p class="text-muted mtop5">Requests from these IPs are rejected before rate limiting.</p>
+              </div>
               <button type="submit" class="btn btn-primary">Save Settings</button>
             <?php echo form_close(); ?>
           </div>

@@ -25,10 +25,12 @@ class Public_leads_api extends AdminController
             $rateLimit  = $rateLimit < 0 ? 0 : $rateLimit;
             $rateWindow = (int) $this->input->post('rate_window');
             $rateWindow = $rateWindow <= 0 ? 1 : $rateWindow;
+            $blockedIps = trim((string) $this->input->post('blocked_ips'));
 
             update_option('public_leads_api_enabled', $enabled);
             update_option('public_leads_api_rate_limit_per_minute', $rateLimit);
             update_option('public_leads_api_rate_limit_window_minutes', $rateWindow);
+            update_option('public_leads_api_blocked_ips', $blockedIps);
 
             set_alert('success', 'Settings updated');
             redirect(admin_url('public_leads_api'));
@@ -40,6 +42,7 @@ class Public_leads_api extends AdminController
         $data['enabled']    = (int) get_option('public_leads_api_enabled', 1);
         $data['rate_limit'] = (int) get_option('public_leads_api_rate_limit_per_minute', 60);
         $data['rate_window']= (int) get_option('public_leads_api_rate_limit_window_minutes', 1);
+        $data['blocked_ips']= (string) get_option('public_leads_api_blocked_ips', '');
 
         $this->load->view(PUBLIC_LEADS_API_MODULE . '/manage', $data);
     }

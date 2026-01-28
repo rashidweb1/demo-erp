@@ -49,6 +49,25 @@ class Public_api extends App_Controller
 
         $rateLimit   = (int) get_option('public_leads_api_rate_limit_per_minute', 60);
         $rateWindow  = (int) get_option('public_leads_api_rate_limit_window_minutes', 1);
+        $blockedIps  = $this->parse_blocked_ips((string) get_option('public_leads_api_blocked_ips', ''));
+        $clientIp    = $this->input->ip_address();
+
+        if ($this->is_ip_blocked($clientIp, $blockedIps)) {
+            $this->public_leads_api_model->log_request([
+                'api_key_id' => null,
+                'status'     => 'blocked_ip',
+                'message'    => 'IP blocked',
+                'payload'    => [],
+                'ip'         => $clientIp,
+                'code'       => 403,
+            ]);
+
+            return $this->respond(403, [
+                'status'  => false,
+                'message' => 'Access denied from this IP',
+            ]);
+        }
+
         if ($this->public_leads_api_model->is_rate_limited((int) $apiKey->id, $rateLimit, $rateWindow)) {
             $this->public_leads_api_model->log_request([
                 'api_key_id' => $apiKey->id,
@@ -152,5 +171,24 @@ class Public_api extends App_Controller
         }
 
         return null;
+    }
+
+    /**
+     * Convert blocked IP option to array.
+     */
+    private function parse_blocked_ips(string $raw): array
+    {
+        if ($raw === '') {
+            return [];
+        }
+
+        $parts = preg_split('/[\\s,]+/', $raw);
+
+        return array_filter(array_map('trim', $parts));
+    }
+
+    private function is_ip_blocked(string $ip, array $blocked): bool
+    {
+        return in_array($ip, $blocked, true);
     }
 }
