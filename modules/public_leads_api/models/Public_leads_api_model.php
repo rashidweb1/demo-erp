@@ -138,7 +138,7 @@ class Public_leads_api_model extends App_Model
         }
 
         foreach ($payload as $key => $value) {
-            if (in_array($key, $leadFields, true) || $key === 'tags') {
+            if (in_array($key, $leadFields, true) || $key === 'tags' || public_leads_api_should_ignore($key)) {
                 continue;
             }
 

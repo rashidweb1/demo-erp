@@ -15,6 +15,100 @@ function public_leads_api_lead_fields(): array
 }
 
 /**
+ * Keys to ignore (honeypots, CSRF, captchas, internal helpers).
+ */
+function public_leads_api_ignored_fields(): array
+{
+    return [
+        // CSRF / Tokens
+        'csrf_token',
+        'csrf_token_name',
+        'csrf_test_name',
+        '_token',
+        '_csrf',
+        'token',
+        'auth_token',
+        'access_token',
+        'api_key',
+        'signature',
+        'timestamp',
+        'nonce',
+
+        // CAPTCHA
+        'g-recaptcha-response',
+        'recaptcha_token',
+        'h-captcha-response',
+        'hcaptcha_response',
+        'cf-turnstile-response',
+        'turnstile_token',
+
+        // Honeypot
+        'honeypot',
+        'hp_field',
+
+        // WordPress
+        '_wpnonce',
+        '_wp_http_referer',
+        'wp_nonce',
+        'wp_verify_nonce',
+        'action',
+
+        // Laravel / Framework
+        '_method',
+        '_previous_',
+        '_flash',
+
+        // JS / Frontend
+        '__NEXT_DATA__',
+        '__RequestVerificationToken',
+
+        // Form metadata
+        'form_id',
+        'form_name',
+        'submit',
+        'submit_btn',
+        'submit_button',
+        'reset',
+
+        // Files
+        'file',
+        'files',
+        'attachment',
+        'attachments',
+        'upload',
+
+        // Tracking (ignore unless needed)
+        'utm_source',
+        'utm_medium',
+        'utm_campaign',
+        'utm_term',
+        'utm_content',
+        'fbclid',
+        'gclid',
+        'msclkid',
+    ];
+}
+
+/**
+ * Quick check if a key should be ignored.
+ */
+function public_leads_api_should_ignore(string $key): bool
+{
+    $lower = strtolower($key);
+
+    if (in_array($lower, public_leads_api_ignored_fields(), true)) {
+        return true;
+    }
+
+    // ignore any field starting with underscore or containing 'csrf'
+    if (strpos($key, '_') === 0 || str_contains($lower, 'csrf')) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
  * Numeric fields that should fall back to 0 instead of "-".
  */
 function public_leads_api_numeric_fields(): array
