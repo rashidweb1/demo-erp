@@ -47,8 +47,9 @@ class Public_api extends App_Controller
             ]);
         }
 
-        $rateLimit = (int) get_option('public_leads_api_rate_limit_per_minute', 60);
-        if ($this->public_leads_api_model->is_rate_limited((int) $apiKey->id, $rateLimit)) {
+        $rateLimit   = (int) get_option('public_leads_api_rate_limit_per_minute', 60);
+        $rateWindow  = (int) get_option('public_leads_api_rate_limit_window_minutes', 1);
+        if ($this->public_leads_api_model->is_rate_limited((int) $apiKey->id, $rateLimit, $rateWindow)) {
             $this->public_leads_api_model->log_request([
                 'api_key_id' => $apiKey->id,
                 'status'     => 'rate_limited',

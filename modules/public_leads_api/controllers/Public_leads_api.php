@@ -23,9 +23,12 @@ class Public_leads_api extends AdminController
             $enabled    = $this->input->post('enabled') ? 1 : 0;
             $rateLimit  = (int) $this->input->post('rate_limit');
             $rateLimit  = $rateLimit < 0 ? 0 : $rateLimit;
+            $rateWindow = (int) $this->input->post('rate_window');
+            $rateWindow = $rateWindow <= 0 ? 1 : $rateWindow;
 
             update_option('public_leads_api_enabled', $enabled);
             update_option('public_leads_api_rate_limit_per_minute', $rateLimit);
+            update_option('public_leads_api_rate_limit_window_minutes', $rateWindow);
 
             set_alert('success', 'Settings updated');
             redirect(admin_url('public_leads_api'));
@@ -36,6 +39,7 @@ class Public_leads_api extends AdminController
         $data['logs']       = $this->public_leads_api_model->recent_logs(25);
         $data['enabled']    = (int) get_option('public_leads_api_enabled', 1);
         $data['rate_limit'] = (int) get_option('public_leads_api_rate_limit_per_minute', 60);
+        $data['rate_window']= (int) get_option('public_leads_api_rate_limit_window_minutes', 1);
 
         $this->load->view(PUBLIC_LEADS_API_MODULE . '/manage', $data);
     }

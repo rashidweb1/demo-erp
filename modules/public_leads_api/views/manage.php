@@ -18,8 +18,14 @@
                 </div>
               </div>
               <div class="form-group">
-                <label for="rate_limit">Rate limit per minute (0 = unlimited)</label>
+                <label for="rate_limit">Rate limit (requests)</label>
                 <input type="number" min="0" class="form-control" name="rate_limit" id="rate_limit" value="<?php echo html_escape($rate_limit); ?>">
+                <p class="text-muted mtop5">0 = unlimited</p>
+              </div>
+              <div class="form-group">
+                <label for="rate_window">Per window (minutes)</label>
+                <input type="number" min="1" class="form-control" name="rate_window" id="rate_window" value="<?php echo html_escape($rate_window); ?>">
+                <p class="text-muted mtop5">Example: 120 requests per 10 minutes.</p>
               </div>
               <button type="submit" class="btn btn-primary">Save Settings</button>
             <?php echo form_close(); ?>
