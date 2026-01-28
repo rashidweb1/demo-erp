@@ -138,16 +138,29 @@
             <pre>X-API-KEY: &lt;your_api_key&gt;
 Content-Type: application/json</pre>
 
-            <p><strong>Payload (examples)</strong></p>
+            <p><strong>Payload (CRM lead fields)</strong></p>
+            <p class="text-muted mtop5">Required: <code>name</code>. <code>status</code> and <code>source</code> fall back to your default CRM values if omitted. Any extra key becomes a Lead custom field; empty values are stored as <code>"-"</code> (or <code>0</code> for numeric fields).</p>
             <pre>{
-  "name": "Jane Doe",
+  "name": "Jane Doe",                  // required lead name
+  "title": "Marketing Manager",
+  "company": "Acme Inc",
   "email": "jane@example.com",
-  "phone": "+1 222 333 4444",
-  "project_type": "Website",
-  "budget": "5000-7000",
-  "notes": ""
+  "website": "https://acme.com",
+  "phonenumber": "+1 222 333 4444",
+  "address": "123 Main St",
+  "city": "Austin",
+  "state": "TX",
+  "zip": "73301",
+  "country": 226,
+  "description": "Project notes or context",
+  "assigned": 5,
+  "status": "New Lead",
+  "source": "Website",
+  "lead_value": 6500,
+  "tags": ["web", "inbound"],
+  "default_language": "en",
+  "custom_field_example": "Any extra key becomes a lead custom field"
 }</pre>
-            <p class="text-muted mtop5">Any unknown field (e.g. <code>project_type</code>, <code>budget</code>) is auto-created as a Lead custom field; empty values are saved as <code>"-"</code>.</p>
 
             <p><strong>Success Response</strong></p>
             <pre>{
@@ -166,7 +179,7 @@ Content-Type: application/json</pre>
             <pre>curl -X POST "<?php echo site_url('api/public/leads/store'); ?>" \
   -H "X-API-KEY: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"name":"Site Form","email":"lead@example.com","utm_source":"fb","notes":""}'</pre>
+  -d '{"name":"Jane Doe","title":"Marketing Manager","company":"Acme Inc","email":"jane@example.com","website":"https://acme.com","phonenumber":"+1 222 333 4444","address":"123 Main St","city":"Austin","state":"TX","zip":"73301","country":226,"description":"Project notes or context","assigned":5,"status":"New Lead","source":"Website","lead_value":6500,"tags":["web","inbound"],"default_language":"en","custom_field_example":"Any extra key becomes a lead custom field"}'</pre>
 
             <p class="text-muted mtop10">Accepts <code>application/json</code> or <code>multipart/form-data</code>. Each request creates one lead and logs the attempt.</p>
           </div>
