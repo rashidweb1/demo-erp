@@ -200,6 +200,53 @@ Content-Type: application/json</pre>
         </div>
       </div>
     </div>
+
+    <div class="row">
+      <div class="col-md-12">
+        <div class="panel_s">
+          <div class="panel-heading">
+            <h4 class="panel-title">Reference Data</h4>
+          </div>
+          <div class="panel-body">
+            <div class="row">
+              <div class="col-md-3">
+                <h5>Sources</h5>
+                <ul class="list-unstyled mtop10">
+                  <?php foreach ($sources as $source): ?>
+                    <li><?php echo html_escape($source['name']); ?></li>
+                  <?php endforeach; ?>
+                </ul>
+              </div>
+              <div class="col-md-3">
+                <h5>Statuses</h5>
+                <ul class="list-unstyled mtop10">
+                  <?php foreach ($statuses as $status): ?>
+                    <li><?php echo html_escape($status['name']); ?></li>
+                  <?php endforeach; ?>
+                </ul>
+              </div>
+              <div class="col-md-3">
+                <h5>Staff (Assignable)</h5>
+                <ul class="list-unstyled mtop10">
+                  <?php foreach ($staff as $member): ?>
+                    <li><code><?php echo (int) $member['id']; ?></code> — <?php echo html_escape($member['name']); ?></li>
+                  <?php endforeach; ?>
+                </ul>
+              </div>
+              <div class="col-md-3">
+                <h5>Tags</h5>
+                <ul class="list-unstyled mtop10">
+                  <?php foreach ($tags as $tag): ?>
+                    <li><?php echo html_escape($tag['name']); ?></li>
+                  <?php endforeach; ?>
+                </ul>
+              </div>
+            </div>
+            <p class="text-muted mtop10">Use staff ID for <code>assigned</code>; other fields accept the names shown.</p>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 <?php init_tail(); ?>

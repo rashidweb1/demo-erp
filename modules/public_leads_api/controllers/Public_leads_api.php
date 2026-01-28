@@ -43,6 +43,10 @@ class Public_leads_api extends AdminController
         $data['rate_limit'] = (int) get_option('public_leads_api_rate_limit_per_minute', 60);
         $data['rate_window']= (int) get_option('public_leads_api_rate_limit_window_minutes', 1);
         $data['blocked_ips']= (string) get_option('public_leads_api_blocked_ips', '');
+        $data['statuses']   = $this->public_leads_api_model->list_statuses();
+        $data['sources']    = $this->public_leads_api_model->list_sources();
+        $data['tags']       = $this->public_leads_api_model->list_tags();
+        $data['staff']      = $this->public_leads_api_model->list_staff();
 
         $this->load->view(PUBLIC_LEADS_API_MODULE . '/manage', $data);
     }
