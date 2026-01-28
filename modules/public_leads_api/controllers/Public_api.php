@@ -72,6 +72,24 @@ class Public_api extends App_Controller
             ]);
         }
 
+        // Require lead name; don't auto-fill with defaults
+        $name = trim((string) ($payload['name'] ?? ''));
+        if ($name === '') {
+            $this->public_leads_api_model->log_request([
+                'api_key_id' => $apiKey->id,
+                'status'     => 'error',
+                'message'    => 'Name is required',
+                'payload'    => $payload,
+                'ip'         => $this->input->ip_address(),
+                'code'       => 422,
+            ]);
+
+            return $this->respond(422, [
+                'status'  => false,
+                'message' => 'The field \"name\" is required',
+            ]);
+        }
+
         try {
             $leadData = $this->public_leads_api_model->prepare_lead($payload);
             $leadId   = $this->leads_model->add($leadData);

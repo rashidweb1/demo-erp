@@ -139,7 +139,7 @@
 Content-Type: application/json</pre>
 
             <p><strong>Payload (CRM lead fields)</strong></p>
-            <p class="text-muted mtop5">Required: <code>name</code>. <code>status</code> and <code>source</code> fall back to your default CRM values if omitted. Any extra key becomes a Lead custom field; empty values are stored as <code>"-"</code> (or <code>0</code> for numeric fields).</p>
+            <p class="text-muted mtop5">Required: <code>name</code> (request is rejected if missing/blank). <code>status</code> and <code>source</code> fall back to your default CRM values if omitted. Any extra key becomes a Lead custom field; empty values are stored as <code>"-"</code> (or <code>0</code> for numeric fields).</p>
             <pre>{
   "name": "Jane Doe",                  // required lead name
   "title": "Marketing Manager",
