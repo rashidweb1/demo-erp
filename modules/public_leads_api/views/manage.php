@@ -142,8 +142,11 @@
             <h4 class="panel-title">API Usage Guide</h4>
           </div>
           <div class="panel-body">
-            <p><strong>Endpoint</strong></p>
+            <p><strong>Endpoint 1</strong></p>
             <pre>POST <?php echo site_url('api/public/leads/store'); ?></pre>
+
+            <p><strong>Endpoint 2</strong></p>
+            <pre>POST <?php echo site_url('public_leads_api/public_api/store'); ?></pre>
 
             <p><strong>Headers</strong></p>
             <pre>X-API-KEY: &lt;your_api_key&gt;
@@ -187,7 +190,7 @@ Content-Type: application/json</pre>
 }</pre>
 
             <p><strong>cURL</strong></p>
-            <pre>curl -X POST "<?php echo site_url('api/public/leads/store'); ?>" \
+            <pre>curl -X POST "YOUR_ENDPOINT" \
   -H "X-API-KEY: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"name":"Jane Doe","title":"Marketing Manager","company":"Acme Inc","email":"jane@example.com","website":"https://acme.com","phonenumber":"+1 222 333 4444","address":"123 Main St","city":"Austin","state":"TX","zip":"73301","country":226,"description":"Project notes or context","assigned":5,"status":"New Lead","source":"Website","lead_value":6500,"tags":["web","inbound"],"default_language":"en","custom_field_example":"Any extra key becomes a lead custom field"}'</pre>
