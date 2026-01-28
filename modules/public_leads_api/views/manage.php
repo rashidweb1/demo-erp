@@ -211,7 +211,7 @@ Content-Type: application/json</pre>
             <div class="row">
               <div class="col-md-3">
                 <h5>Sources</h5>
-                <ul class="list-unstyled mtop10">
+                <ul class="list-unstyled mtop10 ref-list" data-limit="10">
                   <?php foreach ($sources as $source): ?>
                     <li><code><?php echo (int) $source['id']; ?></code> <?php echo html_escape($source['name']); ?></li>
                   <?php endforeach; ?>
@@ -219,7 +219,7 @@ Content-Type: application/json</pre>
               </div>
               <div class="col-md-3">
                 <h5>Statuses</h5>
-                <ul class="list-unstyled mtop10">
+                <ul class="list-unstyled mtop10 ref-list" data-limit="10">
                   <?php foreach ($statuses as $status): ?>
                     <li><code><?php echo (int) $status['id']; ?></code> <?php echo html_escape($status['name']); ?></li>
                   <?php endforeach; ?>
@@ -227,7 +227,7 @@ Content-Type: application/json</pre>
               </div>
               <div class="col-md-3">
                 <h5>Staff (Assignable)</h5>
-                <ul class="list-unstyled mtop10">
+                <ul class="list-unstyled mtop10 ref-list" data-limit="10">
                   <?php foreach ($staff as $member): ?>
                     <li><code><?php echo (int) $member['id']; ?></code> <?php echo html_escape($member['name']); ?></li>
                   <?php endforeach; ?>
@@ -235,18 +235,48 @@ Content-Type: application/json</pre>
               </div>
               <div class="col-md-3">
                 <h5>Tags</h5>
-                <ul class="list-unstyled mtop10">
+                <ul class="list-unstyled mtop10 ref-list" data-limit="10">
                   <?php foreach ($tags as $tag): ?>
                     <li><code><?php echo (int) $tag['id']; ?></code> <?php echo html_escape($tag['name']); ?></li>
                   <?php endforeach; ?>
                 </ul>
               </div>
             </div>
-            <p class="text-muted mtop10">Use staff ID for <code>assigned</code>; other fields accept either the IDs or names shown.</p>
+            <p class="text-muted mtop10">Use staff ID for <code>assigned</code>; other fields accept Names shown.</p>
           </div>
         </div>
       </div>
     </div>
   </div>
 </div>
+<script>
+  (function() {
+    var lists = document.querySelectorAll('.ref-list');
+    lists.forEach(function(list) {
+      var limit = parseInt(list.getAttribute('data-limit') || '10', 10);
+      var items = Array.prototype.slice.call(list.querySelectorAll('li'));
+      if (items.length <= limit) {
+        return;
+      }
+      items.slice(limit).forEach(function(li) { li.style.display = 'none'; });
+
+      var toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'btn btn-link btn-xs pleft0';
+      toggle.textContent = 'Read more';
+      toggle.dataset.state = 'collapsed';
+
+      toggle.addEventListener('click', function() {
+        var collapsed = toggle.dataset.state === 'collapsed';
+        items.slice(limit).forEach(function(li) {
+          li.style.display = collapsed ? '' : 'none';
+        });
+        toggle.textContent = collapsed ? 'Read less' : 'Read more';
+        toggle.dataset.state = collapsed ? 'expanded' : 'collapsed';
+      });
+
+      list.parentNode.appendChild(toggle);
+    });
+  })();
+</script>
 <?php init_tail(); ?>
