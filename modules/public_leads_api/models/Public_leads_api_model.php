@@ -135,6 +135,52 @@ class Public_leads_api_model extends App_Model
         ]);
     }
 
+    public function search_logs(?string $term, int $limit = 25, int $offset = 0, string $orderBy = 'id', string $direction = 'desc'): array
+    {
+        $this->db->from($this->logsTable);
+
+        if ($term) {
+            $this->db->group_start()
+                ->like('status', $term)
+                ->or_like('message', $term)
+                ->or_like('payload', $term)
+                ->or_like('ip_address', $term)
+                ->or_like('lead_id', $term)
+                ->group_end();
+        }
+
+        $allowed = ['id', 'status', 'message', 'lead_id', 'ip_address', 'created_at'];
+        if (!in_array($orderBy, $allowed, true)) {
+            $orderBy = 'id';
+        }
+        $direction = strtolower($direction) === 'asc' ? 'asc' : 'desc';
+
+        return $this->db->order_by($orderBy, $direction)
+                        ->limit($limit, $offset)
+                        ->get()
+                        ->result_array();
+    }
+
+    public function count_logs_filtered(?string $term): int
+    {
+        if ($term) {
+            $this->db->group_start()
+                ->like('status', $term)
+                ->or_like('message', $term)
+                ->or_like('payload', $term)
+                ->or_like('ip_address', $term)
+                ->or_like('lead_id', $term)
+                ->group_end();
+        }
+
+        return (int) $this->db->count_all_results($this->logsTable);
+    }
+
+    public function count_logs_total(): int
+    {
+        return (int) $this->db->count_all($this->logsTable);
+    }
+
     public function recent_logs(int $limit = 20): array
     {
         return $this->db->order_by('id', 'desc')->limit($limit)->get($this->logsTable)->result_array();

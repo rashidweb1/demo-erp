@@ -36,17 +36,16 @@ class Public_leads_api extends AdminController
             redirect(admin_url('public_leads_api'));
         }
 
-        $data['title']      = 'Leads API';
-        $data['keys']       = $this->public_leads_api_model->get_keys();
-        $data['logs']       = $this->public_leads_api_model->recent_logs(25);
-        $data['enabled']    = (int) get_option('public_leads_api_enabled', 1);
-        $data['rate_limit'] = (int) get_option('public_leads_api_rate_limit_per_minute', 60);
-        $data['rate_window']= (int) get_option('public_leads_api_rate_limit_window_minutes', 1);
-        $data['blocked_ips']= (string) get_option('public_leads_api_blocked_ips', '');
-        $data['statuses']   = $this->public_leads_api_model->list_statuses();
-        $data['sources']    = $this->public_leads_api_model->list_sources();
-        $data['tags']       = $this->public_leads_api_model->list_tags();
-        $data['staff']      = $this->public_leads_api_model->list_staff();
+        $data['title']       = 'Leads API';
+        $data['keys']        = $this->public_leads_api_model->get_keys();
+        $data['enabled']     = (int) get_option('public_leads_api_enabled', 1);
+        $data['rate_limit']  = (int) get_option('public_leads_api_rate_limit_per_minute', 60);
+        $data['rate_window'] = (int) get_option('public_leads_api_rate_limit_window_minutes', 1);
+        $data['blocked_ips'] = (string) get_option('public_leads_api_blocked_ips', '');
+        $data['statuses']    = $this->public_leads_api_model->list_statuses();
+        $data['sources']     = $this->public_leads_api_model->list_sources();
+        $data['tags']        = $this->public_leads_api_model->list_tags();
+        $data['staff']       = $this->public_leads_api_model->list_staff();
 
         $this->load->view(PUBLIC_LEADS_API_MODULE . '/manage', $data);
     }
@@ -71,5 +70,57 @@ class Public_leads_api extends AdminController
         }
 
         redirect(admin_url('public_leads_api'));
+    }
+
+    /**
+     * Server-side logs feed for DataTables.
+     */
+    public function logs()
+    {
+        if (!is_admin()) {
+            show_404();
+        }
+
+        $draw     = (int) $this->input->post('draw');
+        $start    = (int) $this->input->post('start');
+        $length   = (int) $this->input->post('length');
+        $length   = $length > 0 ? $length : 25;
+        $search   = $this->input->post('search');
+        $term     = isset($search['value']) ? trim((string) $search['value']) : '';
+        $order    = $this->input->post('order');
+        $orderColIndex = isset($order[0]['column']) ? (int) $order[0]['column'] : 0;
+        $orderDir = isset($order[0]['dir']) ? $order[0]['dir'] : 'desc';
+
+        // Map DataTables columns to DB columns
+        $orderColumns = ['id', 'status', 'message', 'lead_id', 'ip_address', 'created_at'];
+        $orderBy = $orderColumns[$orderColIndex] ?? 'id';
+
+        $logs     = $this->public_leads_api_model->search_logs($term, $length, $start, $orderBy, $orderDir);
+        $filtered = $this->public_leads_api_model->count_logs_filtered($term);
+        $total    = $this->public_leads_api_model->count_logs_total();
+
+        $data = [];
+        foreach ($logs as $log) {
+            $leadLink = $log['lead_id']
+                ? '<a href="' . admin_url('leads/index/' . $log['lead_id']) . '">' . $log['lead_id'] . '</a>'
+                : '—';
+
+            $data[] = [
+                (int) $log['id'],
+                html_escape($log['status']),
+                html_escape($log['message']),
+                $leadLink,
+                html_escape($log['ip_address']),
+                html_escape($log['created_at']),
+            ];
+        }
+
+        echo json_encode([
+            'draw'            => $draw,
+            'recordsTotal'    => $total,
+            'recordsFiltered' => $filtered,
+            'data'            => $data,
+        ]);
+        exit;
     }
 }

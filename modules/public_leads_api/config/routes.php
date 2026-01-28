@@ -8,3 +8,4 @@ $route['api/public/leads/store']         = 'public_leads_api/public_api/store';
 
 // Admin controller entry (fallback)
 $route['admin/public_leads_api'] = 'public_leads_api/public_leads_api/index';
+$route['admin/public_leads_api/logs'] = 'public_leads_api/public_leads_api/logs';

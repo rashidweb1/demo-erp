@@ -1,4 +1,4 @@
-<?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
+﻿<?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
 <?php init_head(); ?>
 <div id="wrapper">
   <div class="content">
@@ -106,7 +106,7 @@
             <h4 class="panel-title">Recent API Calls</h4>
           </div>
           <div class="panel-body table-responsive">
-            <table class="table table-striped">
+            <table class="table table-striped dt-table" id="pla-logs-table" data-order-col="0" data-order-type="desc">
               <thead>
                 <tr>
                   <th>#</th>
@@ -117,18 +117,7 @@
                   <th>At</th>
                 </tr>
               </thead>
-              <tbody>
-                <?php foreach ($logs as $log): ?>
-                  <tr>
-                    <td><?php echo (int) $log['id']; ?></td>
-                    <td><?php echo html_escape($log['status']); ?></td>
-                    <td><?php echo html_escape($log['message']); ?></td>
-                    <td><?php echo $log['lead_id'] ? '<a href="' . admin_url('leads/index/' . $log['lead_id']) . '">' . $log['lead_id'] . '</a>' : '—'; ?></td>
-                    <td><?php echo html_escape($log['ip_address']); ?></td>
-                    <td><?php echo html_escape($log['created_at']); ?></td>
-                  </tr>
-                <?php endforeach; ?>
-              </tbody>
+              <tbody></tbody>
             </table>
           </div>
         </div>
@@ -277,6 +266,45 @@ Content-Type: application/json</pre>
 
       list.parentNode.appendChild(toggle);
     });
+  })();
+</script>
+<script>
+  (function() {
+    "use strict";
+    function initLogsTable($) {
+      if (!$.fn.DataTable) { return; }
+      $('#pla-logs-table').DataTable({
+        processing: true,
+        serverSide: true,
+        pageLength: 10,
+        lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+        order: [[0, 'desc']],
+        ajax: {
+          url: admin_url + 'public_leads_api/logs',
+          type: 'POST'
+        },
+        columns: [
+          { data: 0 },
+          { data: 1 },
+          { data: 2 },
+          { data: 3 },
+          { data: 4 },
+          { data: 5 }
+        ]
+      });
+    }
+
+    if (window.jQuery) {
+      initLogsTable(window.jQuery);
+    } else {
+      // Fallback if jQuery loads later
+      var interval = setInterval(function() {
+        if (window.jQuery) {
+          clearInterval(interval);
+          initLogsTable(window.jQuery);
+        }
+      }, 50);
+    }
   })();
 </script>
 <?php init_tail(); ?>
