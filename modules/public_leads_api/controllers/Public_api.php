@@ -68,6 +68,15 @@ class Public_api extends App_Controller
             ]);
         }
 
+        // Enforce allowed content types
+        $contentType = strtolower($this->input->server('CONTENT_TYPE') ?? '');
+        if ($contentType && !str_contains($contentType, 'application/json') && !str_contains($contentType, 'multipart/form-data') && !str_contains($contentType, 'application/x-www-form-urlencoded')) {
+            return $this->respond(415, [
+                'status'  => false,
+                'message' => 'Unsupported Content-Type',
+            ]);
+        }
+
         if ($this->public_leads_api_model->is_rate_limited((int) $apiKey->id, $rateLimit, $rateWindow)) {
             $this->public_leads_api_model->log_request([
                 'api_key_id' => $apiKey->id,
@@ -85,6 +94,23 @@ class Public_api extends App_Controller
         }
 
         $payload = public_leads_api_read_payload();
+        // Basic size & shape guards
+        $maxBytes = 65536; // 64 KB
+        $contentLength = (int) ($this->input->server('CONTENT_LENGTH') ?? 0);
+        if ($contentLength > $maxBytes) {
+            return $this->respond(413, [
+                'status'  => false,
+                'message' => 'Payload too large',
+            ]);
+        }
+
+        if (count($payload) > 100) {
+            return $this->respond(400, [
+                'status'  => false,
+                'message' => 'Too many fields in payload',
+            ]);
+        }
+
         if (empty($payload)) {
             return $this->respond(400, [
                 'status'  => false,
@@ -162,15 +188,30 @@ class Public_api extends App_Controller
     {
         $headerKey = $this->input->get_request_header('X-API-KEY');
         if ($headerKey) {
-            return trim($headerKey);
+            return $this->sanitize_token($headerKey);
         }
 
         $auth = $this->input->get_request_header('Authorization');
         if ($auth && stripos($auth, 'Bearer ') === 0) {
-            return trim(substr($auth, 7));
+            return $this->sanitize_token(substr($auth, 7));
         }
 
         return null;
+    }
+
+    /**
+     * Remove CRLF and disallow characters outside a safe token set.
+     */
+    private function sanitize_token(string $token): ?string
+    {
+        if (preg_match('/[\r\n]/', $token)) {
+            return null;
+        }
+
+        $token = trim($token);
+        $token = preg_replace('/[^A-Za-z0-9._:-]/', '', $token);
+
+        return $token === '' ? null : $token;
     }
 
     /**

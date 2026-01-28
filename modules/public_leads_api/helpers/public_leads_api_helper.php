@@ -126,7 +126,8 @@ function public_leads_api_sanitize($value)
     }
 
     $value = trim((string) $value);
-    $value = strip_tags($value);
+    $value = strip_tags($value); // strip HTML tags to reduce XSS vectors
+    $value = preg_replace('/[\x00-\x1F\x7F]/u', '', $value); // drop control chars
 
     return $value === '' ? '-' : $value;
 }
@@ -165,17 +166,21 @@ function public_leads_api_read_payload(): array
     $raw         = file_get_contents('php://input');
     $data        = [];
 
-    if (strpos($contentType, 'application/json') !== false) {
-        $data = json_decode($raw, true) ?: [];
-    } else {
-        $data = $_POST;
-        if (!$data && !empty($raw)) {
-            // Fallback: try JSON anyway
-            $decoded = json_decode($raw, true);
-            if (is_array($decoded)) {
-                $data = $decoded;
+    try {
+        if (strpos($contentType, 'application/json') !== false) {
+            $data = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
+        } else {
+            $data = $_POST;
+            if (!$data && !empty($raw)) {
+                // Fallback: try JSON anyway
+                $decoded = json_decode($raw, true);
+                if (is_array($decoded)) {
+                    $data = $decoded;
+                }
             }
         }
+    } catch (Throwable $e) {
+        $data = [];
     }
 
     return is_array($data) ? $data : [];
