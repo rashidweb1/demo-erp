@@ -52,6 +52,11 @@ function public_leads_api_ignored_fields(): array
         'wp_nonce',
         'wp_verify_nonce',
         'action',
+        '_wpcf7',
+        '_wpcf7_version',
+        '_wpcf7_locale',
+        '_wpcf7_unit_tag',
+        '_wpcf7_container_post',       
 
         // Laravel / Framework
         '_method',
