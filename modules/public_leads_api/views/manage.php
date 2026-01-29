@@ -143,6 +143,28 @@ Content-Type: application/json</pre>
 
             <p><strong>Payload (CRM lead fields)</strong></p>
             <p class="text-muted mtop5">Required: <code>name</code> (request is rejected if missing/blank). <code>status</code> and <code>source</code> fall back to your default CRM values if omitted. Any extra key becomes a Lead custom field; empty values are stored as <code>"-"</code> (or <code>0</code> for numeric fields).</p>
+
+            <div class="table-responsive mtop10">
+              <table class="table table-bordered table-condensed">
+                <thead>
+                  <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td><code>name</code></td><td>string</td><td>Required lead name.</td></tr>
+                  <tr><td><code>title</code>, <code>company</code>, <code>email</code>, <code>website</code>, <code>phonenumber</code>, <code>address</code>, <code>city</code>, <code>state</code>, <code>zip</code>, <code>description</code>, <code>default_language</code></td><td>string</td><td>Free text; trimmed, HTML stripped.</td></tr>
+                  <tr><td><code>country</code></td><td>int</td><td>Country ID from CRM list.</td></tr>
+                  <tr><td><code>assigned</code></td><td>int</td><td>Staff ID (see Reference &gt; Staff).</td></tr>
+                  <tr><td><code>status</code>, <code>source</code></td><td>int or string</td><td>ID or exact name; falls back to defaults if not found.</td></tr>
+                  <tr><td><code>lead_value</code></td><td>int</td><td>Numeric lead value.</td></tr>
+                  <tr><td><code>tags</code></td><td>array or comma string</td><td>Example: <code>["web","inbound"]</code>.</td></tr>
+                  <tr><td>Custom fields</td><td>string / number / array</td><td>Any extra key becomes a lead custom field; arrays are JSON encoded.</td></tr>
+                </tbody>
+              </table>
+            </div>
             <pre>{
   "name": "Jane Doe",                  // required lead name
   "title": "Marketing Manager",
