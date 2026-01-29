@@ -32,6 +32,11 @@
                 <textarea class="form-control" name="blocked_ips" id="blocked_ips" rows="3" placeholder="one or more IPs, comma or newline separated"><?php echo html_escape($blocked_ips); ?></textarea>
                 <p class="text-muted mtop5">Requests from these IPs are rejected before rate limiting.</p>
               </div>
+              <div class="form-group">
+                <label for="allowed_domains">Authorized domains (optional)</label>
+                <textarea class="form-control" name="allowed_domains" id="allowed_domains" rows="3" placeholder="example.com, app.example.com"><?php echo html_escape($allowed_domains); ?></textarea>
+                <p class="text-muted mtop5">If set, requests must include an <code>Origin</code> or <code>Referer</code> host matching one of the domains. Leave blank to allow any domain.</p>
+              </div>
               <button type="submit" class="btn btn-primary">Save Settings</button>
             <?php echo form_close(); ?>
           </div>

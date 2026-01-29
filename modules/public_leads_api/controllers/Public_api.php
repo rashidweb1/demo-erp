@@ -50,6 +50,7 @@ class Public_api extends App_Controller
         $rateLimit   = (int) get_option('public_leads_api_rate_limit_per_minute', 60);
         $rateWindow  = (int) get_option('public_leads_api_rate_limit_window_minutes', 1);
         $blockedIps  = $this->parse_blocked_ips((string) get_option('public_leads_api_blocked_ips', ''));
+        $allowedDomains = $this->parse_allowed_domains((string) get_option('public_leads_api_allowed_domains', ''));
         $clientIp    = $this->input->ip_address();
 
         if ($this->is_ip_blocked($clientIp, $blockedIps)) {
@@ -90,6 +91,22 @@ class Public_api extends App_Controller
             return $this->respond(429, [
                 'status'  => false,
                 'message' => 'Rate limit exceeded',
+            ]);
+        }
+
+        if ($allowedDomains && !$this->is_domain_authorized($allowedDomains)) {
+            $this->public_leads_api_model->log_request([
+                'api_key_id' => $apiKey->id,
+                'status'     => 'unauthorized_domain',
+                'message'    => 'Domain not allowed',
+                'payload'    => [],
+                'ip'         => $this->input->ip_address(),
+                'code'       => 403,
+            ]);
+
+            return $this->respond(403, [
+                'status'  => false,
+                'message' => 'Unauthorized domain',
             ]);
         }
 
@@ -231,5 +248,64 @@ class Public_api extends App_Controller
     private function is_ip_blocked(string $ip, array $blocked): bool
     {
         return in_array($ip, $blocked, true);
+    }
+
+    private function parse_allowed_domains(string $raw): array
+    {
+        if ($raw === '') {
+            return [];
+        }
+
+        $parts = preg_split('/[\\s,]+/', $raw);
+
+        return array_values(array_filter(array_map(function ($item) {
+            $host = strtolower(trim($item));
+            return $host !== '' ? $host : null;
+        }, $parts)));
+    }
+
+    private function is_domain_authorized(array $allowed): bool
+    {
+        $host = $this->get_request_host();
+        if (!$host) {
+            return false;
+        }
+
+        foreach ($allowed as $allowedHost) {
+            if ($allowedHost === $host) {
+                return true;
+            }
+
+            // allow subdomains when list entry starts with a dot (e.g. .example.com)
+            if (strpos($allowedHost, '.') === 0 && substr($host, -strlen($allowedHost)) === $allowedHost) {
+                return true;
+            }
+
+            // general suffix match (allows foo.example.com when allowed is example.com)
+            if ($host !== $allowedHost && substr($host, -strlen($allowedHost)) === $allowedHost) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function get_request_host(): ?string
+    {
+        $origin  = $this->input->server('HTTP_ORIGIN');
+        $referer = $this->input->server('HTTP_REFERER');
+
+        $candidates = [$origin, $referer];
+        foreach ($candidates as $url) {
+            if (!$url) {
+                continue;
+            }
+            $host = parse_url($url, PHP_URL_HOST);
+            if ($host) {
+                return strtolower($host);
+            }
+        }
+
+        return null;
     }
 }
