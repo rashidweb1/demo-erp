@@ -77,7 +77,7 @@ class Public_api extends App_Controller
             ]);
         }
 
-        if ($this->public_leads_api_model->is_rate_limited((int) $apiKey->id, $rateLimit, $rateWindow)) {
+        if ($this->public_leads_api_model->is_rate_limited((int) $apiKey->id, $rateLimit, $rateWindow, $clientIp)) {
             $this->public_leads_api_model->log_request([
                 'api_key_id' => $apiKey->id,
                 'status'     => 'rate_limited',

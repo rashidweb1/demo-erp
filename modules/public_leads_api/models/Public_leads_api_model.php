@@ -103,7 +103,7 @@ class Public_leads_api_model extends App_Model
         $this->db->where('id', $id)->update($this->keysTable);
     }
 
-    public function is_rate_limited(int $apiKeyId, int $limitPerWindow, int $windowMinutes = 1): bool
+    public function is_rate_limited(int $apiKeyId, int $limitPerWindow, int $windowMinutes = 1, ?string $ipAddress = null): bool
     {
         if ($limitPerWindow <= 0) {
             return false;
@@ -112,9 +112,14 @@ class Public_leads_api_model extends App_Model
         $minutes   = $windowMinutes <= 0 ? 1 : $windowMinutes;
         $threshold = date('Y-m-d H:i:s', time() - 60 * $minutes);
 
-        $count = $this->db->where('api_key_id', $apiKeyId)
-                          ->where('created_at >=', $threshold)
-                          ->count_all_results($this->logsTable);
+        $this->db->where('api_key_id', $apiKeyId)
+                 ->where('created_at >=', $threshold);
+
+        if ($ipAddress) {
+            $this->db->where('ip_address', $ipAddress);
+        }
+
+        $count = $this->db->count_all_results($this->logsTable);
 
         return $count >= $limitPerWindow;
     }
