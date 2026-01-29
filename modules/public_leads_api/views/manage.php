@@ -201,10 +201,35 @@ Content-Type: application/json</pre>
 }</pre>
 
             <p><strong>cURL</strong></p>
-            <pre>curl -X POST "YOUR_ENDPOINT" \
+            <pre>
+curl -X POST "YOUR_ENDPOINT" \
   -H "X-API-KEY: YOUR_API_KEY" \
+  -H "Accept: application/json" \
   -H "Content-Type: application/json" \
-  -d '{"name":"Jane Doe","title":"Marketing Manager","company":"Acme Inc","email":"jane@example.com","website":"https://acme.com","phonenumber":"+1 222 333 4444","address":"123 Main St","city":"Austin","state":"TX","zip":"73301","country":226,"description":"Project notes or context","assigned":5,"status":"New Lead","source":"Website","lead_value":6500,"tags":["web","inbound"],"default_language":"en","custom_field_example":"Any extra key becomes a lead custom field"}'</pre>
+  -d '{
+    "name": "Jane Doe",
+    "title": "Marketing Manager",
+    "company": "Acme Inc",
+    "email": "jane@example.com",
+    "website": "https://acme.com",
+    "phonenumber": "+1 222 333 4444",
+    "address": "123 Main St",
+    "city": "Austin",
+    "state": "TX",
+    "zip": "73301",
+    "country": 226,
+    "description": "Project notes or context",
+    "assigned": 5,
+    "status": "New Lead",
+    "source": "Website",
+    "lead_value": 6500,
+    "tags": [
+      "web",
+      "inbound"
+    ],
+    "default_language": "en",
+    "custom_field_example": "Any extra key becomes a lead custom field"
+  }'</pre>
 
             <p class="text-muted mtop10">Accepts <code>application/json</code> or <code>multipart/form-data</code>. Each request creates one lead and logs the attempt.</p>
           </div>
