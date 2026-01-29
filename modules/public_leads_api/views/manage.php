@@ -293,37 +293,43 @@ Content-Type: application/json</pre>
 <script>
   (function() {
     "use strict";
-    function initLogsTable($) {
-      if (!$.fn.DataTable) { return; }
-      $('#pla-logs-table').DataTable({
-        processing: true,
-        serverSide: true,
-        pageLength: 10,
-        lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
-        order: [[0, 'desc']],
-        ajax: {
-          url: admin_url + 'public_leads_api/logs',
-          type: 'POST'
-        },
-        columns: [
-          { data: 0 },
-          { data: 1 },
-          { data: 2 },
-          { data: 3 },
-          { data: 4 },
-          { data: 5 }
-        ]
-      });
+    // Use core CRM helper for consistent DataTable options/translations.
+    // Wait for jQuery + initDataTable to be available because this file
+    // is included before init_tail() where scripts are loaded.
+    function bootDataTable() {
+      var $ = window.jQuery;
+      if (!$ || typeof $.fn.DataTable !== 'function' || typeof window.initDataTable !== 'function') {
+        return false;
+      }
+
+      var $table      = $('#pla-logs-table');
+      if (!$table.length) { return true; }
+
+      var orderCol    = parseInt($table.data('order-col') || 0, 10);
+      var orderDir    = ($table.data('order-type') || 'desc').toString();
+      var notSearch   = [];
+      var notSortable = [];
+      var serverParams = {};
+
+      initDataTable(
+        $table,
+        admin_url + 'public_leads_api/logs',
+        notSearch,
+        notSortable,
+        serverParams,
+        [orderCol, orderDir]
+      );
+
+      return true;
     }
 
-    if (window.jQuery) {
-      initLogsTable(window.jQuery);
-    } else {
-      // Fallback if jQuery loads later
+    if (!bootDataTable()) {
+      var attempts = 0;
+      var maxAttempts = 80; // 4 seconds (80 * 50ms)
       var interval = setInterval(function() {
-        if (window.jQuery) {
+        attempts++;
+        if (bootDataTable() || attempts >= maxAttempts) {
           clearInterval(interval);
-          initLogsTable(window.jQuery);
         }
       }, 50);
     }
