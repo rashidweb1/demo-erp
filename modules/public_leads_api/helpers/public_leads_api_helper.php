@@ -163,6 +163,28 @@ function public_leads_api_label_from_key(string $key): string
 }
 
 /**
+ * Split comma/newline list into unique, slugified keys.
+ */
+function public_leads_api_parse_allowed(string $raw): array
+{
+    if ($raw === '') {
+        return [];
+    }
+
+    $parts = preg_split('/[\\s,]+/', $raw);
+    $keys  = [];
+
+    foreach ($parts as $part) {
+        $slug = slug_it($part, ['separator' => '_']);
+        if ($slug !== '') {
+            $keys[$slug] = true;
+        }
+    }
+
+    return array_keys($keys);
+}
+
+/**
  * Normalize incoming payload into associative array.
  */
 function public_leads_api_read_payload(): array

@@ -199,6 +199,8 @@ class Public_leads_api_model extends App_Model
         $leadFields   = public_leads_api_lead_fields();
         $leadData     = [];
         $customFields = [];
+        $allowed      = $this->allowed_custom_fields();
+        $restrict     = !empty($allowed);
 
         $defaultStatus = $this->get_default_status_id();
         $defaultSource = $this->get_default_source_id();
@@ -223,6 +225,11 @@ class Public_leads_api_model extends App_Model
 
         foreach ($payload as $key => $value) {
             if (in_array($key, $leadFields, true) || $key === 'tags' || public_leads_api_should_ignore($key)) {
+                continue;
+            }
+
+            $normalized = slug_it($key, ['separator' => '_']);
+            if ($restrict && !in_array($normalized, $allowed, true)) {
                 continue;
             }
 
@@ -336,5 +343,11 @@ class Public_leads_api_model extends App_Model
         $newId = $this->custom_fields_model->add($data);
 
         return $newId ? (int) $newId : null;
+    }
+
+    private function allowed_custom_fields(): array
+    {
+        $raw = (string) get_option('public_leads_api_allowed_custom_fields', '');
+        return public_leads_api_parse_allowed($raw);
     }
 }

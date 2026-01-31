@@ -40,3 +40,4 @@ $CI->db->query("
 
 add_option('public_leads_api_enabled', 1);
 add_option('public_leads_api_rate_limit_per_minute', 60);
+add_option('public_leads_api_allowed_custom_fields', '');

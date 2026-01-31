@@ -32,6 +32,11 @@
                 <textarea class="form-control" name="blocked_ips" id="blocked_ips" rows="3" placeholder="one or more IPs, comma or newline separated"><?php echo html_escape($blocked_ips); ?></textarea>
                 <p class="text-muted mtop5">Requests from these IPs are rejected before rate limiting.</p>
               </div>
+              <div class="form-group">
+                <label for="allowed_custom_fields">Allowed custom field keys</label>
+                <textarea class="form-control" name="allowed_custom_fields" id="allowed_custom_fields" rows="3" placeholder="e.g. tracking_id, campaign_source, budget"><?php echo html_escape($allowed_custom_fields); ?></textarea>
+                <p class="text-muted mtop5">Leave empty to allow any extra payload key to become a Lead custom field. If filled, only the listed keys (comma or newline separated) will be auto-created when missing.</p>
+              </div>
               <button type="submit" class="btn btn-primary">Save Settings</button>
             <?php echo form_close(); ?>
           </div>
@@ -142,7 +147,7 @@
 Content-Type: application/json</pre>
 
             <p><strong>Payload (CRM lead fields)</strong></p>
-            <p class="text-muted mtop5">Required: <code>name</code> (request is rejected if missing/blank). <code>status</code> and <code>source</code> fall back to your default CRM values if omitted. Any extra key becomes a Lead custom field; empty values are stored as <code>"-"</code> (or <code>0</code> for numeric fields).</p>
+            <p class="text-muted mtop5">Required: <code>name</code> (request is rejected if missing/blank). <code>status</code> and <code>source</code> fall back to your default CRM values if omitted. Extra keys become Lead custom fields only when whitelisted in settings; empty values are stored as <code>"-"</code> (or <code>0</code> for numeric fields).</p>
 
             <div class="table-responsive mtop10">
               <table class="table table-bordered table-condensed">
@@ -161,7 +166,7 @@ Content-Type: application/json</pre>
                   <tr><td><code>status</code>, <code>source</code></td><td>int or string</td><td>ID or exact name; falls back to defaults if not found.</td></tr>
                   <tr><td><code>lead_value</code></td><td>int</td><td>Numeric lead value.</td></tr>
                   <tr><td><code>tags</code></td><td>array or comma string</td><td>Example: <code>["web","inbound"]</code>.</td></tr>
-                  <tr><td>Custom fields</td><td>string / number / array</td><td>Any extra key becomes a lead custom field; arrays are JSON encoded.</td></tr>
+                  <tr><td>Custom fields</td><td>string / number / array</td><td>Extra keys become lead custom fields if they match the allowed list (Settings &gt; Public API); arrays are JSON encoded.</td></tr>
                 </tbody>
               </table>
             </div>
@@ -184,7 +189,7 @@ Content-Type: application/json</pre>
   "lead_value": 6500,
   "tags": ["web", "inbound"],
   "default_language": "en",
-  "custom_field_example": "Any extra key becomes a lead custom field"
+  "custom_field_example": "Extra keys become lead custom fields when allowed"
 }</pre>
 
             <p><strong>Success Response</strong></p>
@@ -228,7 +233,7 @@ curl -X POST "YOUR_ENDPOINT" \
       "inbound"
     ],
     "default_language": "en",
-    "custom_field_example": "Any extra key becomes a lead custom field"
+    "custom_field_example": "Extra keys become lead custom fields when allowed"
   }'</pre>
 
             <p class="text-muted mtop10">Accepts <code>application/json</code> or <code>multipart/form-data</code>. Each request creates one lead and logs the attempt.</p>

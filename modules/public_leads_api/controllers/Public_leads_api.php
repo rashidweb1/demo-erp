@@ -26,11 +26,13 @@ class Public_leads_api extends AdminController
             $rateWindow = (int) $this->input->post('rate_window');
             $rateWindow = $rateWindow <= 0 ? 1 : $rateWindow;
             $blockedIps = trim((string) $this->input->post('blocked_ips'));
+            $allowedFields = trim((string) $this->input->post('allowed_custom_fields'));
 
             update_option('public_leads_api_enabled', $enabled);
             update_option('public_leads_api_rate_limit_per_minute', $rateLimit);
             update_option('public_leads_api_rate_limit_window_minutes', $rateWindow);
             update_option('public_leads_api_blocked_ips', $blockedIps);
+            update_option('public_leads_api_allowed_custom_fields', $allowedFields);
 
             set_alert('success', 'Settings updated');
             redirect(admin_url('public_leads_api'));
@@ -42,6 +44,7 @@ class Public_leads_api extends AdminController
         $data['rate_limit']  = (int) get_option('public_leads_api_rate_limit_per_minute', 60);
         $data['rate_window'] = (int) get_option('public_leads_api_rate_limit_window_minutes', 1);
         $data['blocked_ips'] = (string) get_option('public_leads_api_blocked_ips', '');
+        $data['allowed_custom_fields'] = (string) get_option('public_leads_api_allowed_custom_fields', '');
         $data['statuses']    = $this->public_leads_api_model->list_statuses();
         $data['sources']     = $this->public_leads_api_model->list_sources();
         $data['tags']        = $this->public_leads_api_model->list_tags();
