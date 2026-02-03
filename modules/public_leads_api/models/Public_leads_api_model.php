@@ -329,13 +329,6 @@ class Public_leads_api_model extends App_Model
             'type'                    => 'input',
             'options'                 => '',
             'bs_column'               => 12,
-            'display_inline'          => 0,
-            'only_admin'              => 0,
-            'show_on_table'           => 0,
-            'required'                => 0,
-            'show_on_pdf'             => 0,
-            'show_on_client_portal'   => 0,
-            'disalow_client_to_edit'  => 0,
             'field_order'             => 0,
             'default_value'           => '',
         ];
