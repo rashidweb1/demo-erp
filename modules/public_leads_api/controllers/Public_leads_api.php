@@ -7,6 +7,10 @@ class Public_leads_api extends AdminController
     public function __construct()
     {
         parent::__construct();
+        // Restrict the entire controller to administrators to prevent non-admin staff from accessing it directly via URL.
+        if (!is_admin()) {
+            access_denied('Public Leads API');
+        }
         $this->load->model('public_leads_api/public_leads_api_model');
     }
 
