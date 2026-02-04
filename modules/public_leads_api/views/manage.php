@@ -111,7 +111,7 @@
             <h4 class="panel-title">Recent API Calls</h4>
           </div>
           <div class="panel-body table-responsive">
-            <table class="table table-striped dt-table" id="pla-logs-table" data-order-col="0" data-order-type="desc">
+            <table class="table table-striped table-pla-logs" id="pla-logs-table" data-order-col="0" data-order-type="desc">
               <thead>
                 <tr>
                   <th>#</th>
