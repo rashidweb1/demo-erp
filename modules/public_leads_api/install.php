@@ -41,3 +41,38 @@ $CI->db->query("
 add_option('public_leads_api_enabled', 1);
 add_option('public_leads_api_rate_limit_per_minute', 60);
 add_option('public_leads_api_allowed_custom_fields', '');
+
+/**
+ * Ensure application/config/my_routes.php exists so module routes
+ * (including this module) are loaded automatically without touching
+ * core routes.php. Only create if missing.
+ */
+$myRoutesPath = APPPATH . 'config/my_routes.php';
+
+if (!file_exists($myRoutesPath)) {
+    $loader = <<<'PHP'
+<?php
+defined('BASEPATH') or exit('No direct script access allowed');
+
+/*
+|--------------------------------------------------------------------------
+| Load module routes (SAFE MODE)
+|--------------------------------------------------------------------------
+| This file is loaded BEFORE CI_Controller exists.
+| Do NOT use get_instance(), DB, or Perfex services here.
+|
+| Only include static route files.
+*/
+
+$modules_path = APPPATH . '../modules/';
+
+if (is_dir($modules_path)) {
+    foreach (glob($modules_path . '*/config/routes.php') as $route_file) {
+        include $route_file;
+    }
+}
+
+PHP;
+
+    file_put_contents($myRoutesPath, $loader);
+}
