@@ -80,17 +80,7 @@ function public_leads_api_ignored_fields(): array
         'files',
         'attachment',
         'attachments',
-        'upload',
-
-        // Tracking (ignore unless needed)
-        'utm_source',
-        'utm_medium',
-        'utm_campaign',
-        'utm_term',
-        'utm_content',
-        'fbclid',
-        'gclid',
-        'msclkid',
+        'upload'
     ];
 }
 
