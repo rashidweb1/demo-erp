@@ -145,7 +145,7 @@ function public_leads_api_default($field, $value)
     $value = is_null($value) ? '' : $value;
 
     if ($value === '') {
-        return in_array($field, public_leads_api_numeric_fields(), true) ? 0 : '-';
+        return in_array($field, public_leads_api_numeric_fields(), true) ? 0 : '';
     }
 
     return public_leads_api_sanitize($value);
