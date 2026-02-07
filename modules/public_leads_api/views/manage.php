@@ -104,9 +104,9 @@
                     <td><?php echo html_escape($key['created_at']); ?></td>
                     <td>
                       <?php if ($key['active']): ?>
-                        <a href="<?php echo admin_url('public_leads_api/revoke/' . $key['id']); ?>" class="btn btn-xs btn-warning">Revoke</a>
+                        <a href="<?php echo admin_url('public_leads_api/revoke/' . $key['id']); ?>" class="btn btn-xs btn-warning pla-revoke">Revoke</a>
                       <?php endif; ?>
-                      <a href="<?php echo admin_url('public_leads_api/delete/' . $key['id']); ?>" class="btn btn-xs btn-danger _delete">Delete</a>
+                      <a href="<?php echo admin_url('public_leads_api/delete/' . $key['id']); ?>" class="btn btn-xs btn-danger pla-delete">Delete</a>
                     </td>
                   </tr>
                 <?php endforeach; ?>
@@ -331,6 +331,41 @@ curl -X POST "YOUR_ENDPOINT" \
 
       list.parentNode.appendChild(toggle);
     });
+  })();
+</script>
+<script>
+  (function() {
+    "use strict";
+    function initPlaConfirmAlerts() {
+      var $ = window.jQuery;
+      if (!$) { return; }
+      $(document).off("click.pla", ".pla-revoke").on("click.pla", ".pla-revoke", function(e) {
+        if (!confirm("Are you sure you want to revoke this API key? It will no longer work for new requests.")) {
+          e.preventDefault();
+        }
+      });
+      $(document).off("click.pla", ".pla-delete").on("click.pla", ".pla-delete", function(e) {
+        if (!confirm("Are you sure you want to delete this API key? This cannot be undone.")) {
+          e.preventDefault();
+        }
+      });
+    }
+    if (window.jQuery) {
+      initPlaConfirmAlerts();
+    } else {
+      document.addEventListener("DOMContentLoaded", function() {
+        var attempts = 0;
+        var iv = setInterval(function() {
+          attempts++;
+          if (window.jQuery) {
+            clearInterval(iv);
+            initPlaConfirmAlerts();
+          } else if (attempts >= 80) {
+            clearInterval(iv);
+          }
+        }, 50);
+      });
+    }
   })();
 </script>
 <script>
