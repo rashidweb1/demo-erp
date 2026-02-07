@@ -96,18 +96,20 @@ function public_leads_api_inactive_notification_cron()
         return;
     }
 
-    $lines = [];
-    $lines[] = 'The following Public Leads API key(s) have not been used for more than ' . $inactiveDays . ' day(s):';
-    $lines[] = '';
+    $parts = [];
+    $parts[] = 'The following Public Leads API key(s) have not been used for more than ' . $inactiveDays . ' day(s):';
+    $parts[] = '<br />';
+    $url = admin_url('public_leads_api');
     foreach ($inactiveKeys as $key) {
         $lastUsed = !empty($key['last_used_at']) ? $key['last_used_at'] : 'Never';
-        $lines[] = '  • Label: ' . $key['label'] . ' | Last used: ' . $lastUsed;
+        $parts[] = '• <strong>Label:</strong> ' . htmlspecialchars($key['label'], ENT_QUOTES, 'UTF-8') . '<br />';
+        $parts[] = '&nbsp;&nbsp;<strong>Last used:</strong> ' . htmlspecialchars($lastUsed, ENT_QUOTES, 'UTF-8') . '<br />';
+        $parts[] = '<br />';
     }
-    $lines[] = '';
-    $lines[] = 'You can review or revoke keys at: ' . admin_url('public_leads_api');
+    $parts[] = 'You can review or revoke keys at: <a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '</a>';
 
     $subject = 'Public Leads API – Inactive key(s) notification';
-    $message = implode("\n", $lines);
+    $message = implode('', $parts);
 
     $CI->load->model('emails_model');
     foreach ($recipients as $email) {
