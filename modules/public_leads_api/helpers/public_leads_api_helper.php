@@ -206,7 +206,7 @@ function public_leads_api_read_payload(): array
 /**
  * Build a compact preview string to store in logs.
  */
-function public_leads_api_compact_payload(array $data, int $max = 500): string
+function public_leads_api_compact_payload(array $data, int $max = 1000): string
 {
     $json = json_encode($data);
     if (strlen($json) <= $max) {

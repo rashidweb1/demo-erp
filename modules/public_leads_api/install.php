@@ -29,7 +29,7 @@ $CI->db->query("
         `lead_id` INT(11) UNSIGNED NULL,
         `status` VARCHAR(50) NOT NULL,
         `message` VARCHAR(255) NOT NULL,
-        `payload` MEDIUMTEXT NULL,
+        `payload` LONGTEXT NULL,
         `ip_address` VARCHAR(64) NULL,
         `response_code` SMALLINT NULL,
         `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
