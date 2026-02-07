@@ -343,4 +343,28 @@ class Public_leads_api_model extends App_Model
         $raw = (string) get_option('public_leads_api_allowed_custom_fields', '');
         return public_leads_api_parse_allowed($raw);
     }
+
+    /**
+     * Get active API keys that have not been used for more than $inactiveDays days.
+     * A key is inactive if last_used_at is NULL (never used) or last_used_at is older than the threshold.
+     *
+     * @param int $inactiveDays
+     * @return array
+     */
+    public function get_inactive_keys(int $inactiveDays): array
+    {
+        if ($inactiveDays <= 0) {
+            return [];
+        }
+
+        $threshold = date('Y-m-d H:i:s', strtotime("-{$inactiveDays} days"));
+
+        $this->db->where('active', 1);
+        $this->db->group_start();
+        $this->db->where('last_used_at IS NULL', null, false);
+        $this->db->or_where('last_used_at <', $threshold);
+        $this->db->group_end();
+
+        return $this->db->get($this->keysTable)->result_array();
+    }
 }

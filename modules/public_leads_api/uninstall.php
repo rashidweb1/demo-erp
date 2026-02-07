@@ -9,6 +9,12 @@ $CI->db->query('DROP TABLE IF EXISTS `' . db_prefix() . 'pla_api_keys`');
 
 delete_option('public_leads_api_enabled');
 delete_option('public_leads_api_rate_limit_per_minute');
+delete_option('public_leads_api_rate_limit_window_minutes');
+delete_option('public_leads_api_blocked_ips');
+delete_option('public_leads_api_allowed_custom_fields');
+delete_option('public_leads_api_inactive_days');
+delete_option('public_leads_api_inactive_notify_emails');
+delete_option('public_leads_api_last_inactive_notification_sent');
 
 /**
  * Optionally clean up the auto-created my_routes.php if it still matches

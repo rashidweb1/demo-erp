@@ -1,4 +1,4 @@
-﻿<?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
+<?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
 <?php init_head(); ?>
 <div id="wrapper">
   <div class="content">
@@ -36,6 +36,19 @@
                 <label for="allowed_custom_fields">Allowed custom field keys</label>
                 <textarea class="form-control" name="allowed_custom_fields" id="allowed_custom_fields" rows="3" placeholder="e.g. tracking_id, campaign_source, budget"><?php echo html_escape($allowed_custom_fields); ?></textarea>
                 <p class="text-muted mtop5">Leave empty to allow any extra payload key to become a Lead custom field. If filled, only the listed keys (comma or newline separated) will be auto-created when missing.</p>
+              </div>
+              <hr>
+              <h5 class="bold">Inactive API notification</h5>
+              <p class="text-muted mtop5">Send an email when an API key has not been used for a number of days.</p>
+              <div class="form-group">
+                <label for="inactive_days">Inactive days (X)</label>
+                <input type="number" min="0" class="form-control" name="inactive_days" id="inactive_days" value="<?php echo (int) $inactive_days; ?>">
+                <p class="text-muted mtop5">Notify when a key has not been used for more than this many days. Set to 0 to disable.</p>
+              </div>
+              <div class="form-group">
+                <label for="inactive_notify_emails">Notification email addresses</label>
+                <textarea class="form-control" name="inactive_notify_emails" id="inactive_notify_emails" rows="3" placeholder="admin@example.com, alerts@example.com"><?php echo html_escape($inactive_notify_emails); ?></textarea>
+                <p class="text-muted mtop5">One or more email addresses to receive the inactive API notification (comma or newline separated).</p>
               </div>
               <button type="submit" class="btn btn-primary">Save Settings</button>
             <?php echo form_close(); ?>

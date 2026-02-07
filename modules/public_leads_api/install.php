@@ -41,6 +41,8 @@ $CI->db->query("
 add_option('public_leads_api_enabled', 1);
 add_option('public_leads_api_rate_limit_per_minute', 60);
 add_option('public_leads_api_allowed_custom_fields', '');
+add_option('public_leads_api_inactive_days', 30);
+add_option('public_leads_api_inactive_notify_emails', '');
 
 /**
  * Ensure application/config/my_routes.php exists so module routes
