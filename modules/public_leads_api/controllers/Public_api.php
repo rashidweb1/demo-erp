@@ -78,10 +78,11 @@ class Public_api extends App_Controller
         }
 
         if ($this->public_leads_api_model->is_rate_limited((int) $apiKey->id, $rateLimit, $rateWindow, $clientIp)) {
+            $this->block_ip($clientIp);
             $this->public_leads_api_model->log_request([
                 'api_key_id' => $apiKey->id,
                 'status'     => 'rate_limited',
-                'message'    => 'Rate limit exceeded',
+                'message'    => 'Rate limit exceeded; IP auto-blocked',
                 'payload'    => [],
                 'ip'         => $this->input->ip_address(),
                 'code'       => 429,
@@ -231,5 +232,28 @@ class Public_api extends App_Controller
     private function is_ip_blocked(string $ip, array $blocked): bool
     {
         return in_array($ip, $blocked, true);
+    }
+
+    /**
+     * Add an IP to the blocked list option if it's not already present.
+     */
+    private function block_ip(string $ip): void
+    {
+        $ip = trim($ip);
+        if ($ip === '' || !filter_var($ip, FILTER_VALIDATE_IP)) {
+            return;
+        }
+
+        $raw  = (string) get_option('public_leads_api_blocked_ips', '');
+        $list = $this->parse_blocked_ips($raw);
+
+        if (in_array($ip, $list, true)) {
+            return;
+        }
+
+        $list[] = $ip;
+        $normalized = implode("\n", $list);
+
+        update_option('public_leads_api_blocked_ips', $normalized);
     }
 }

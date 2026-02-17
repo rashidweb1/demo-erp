@@ -30,7 +30,7 @@
               <div class="form-group">
                 <label for="blocked_ips">Blocked IPs</label>
                 <textarea class="form-control" name="blocked_ips" id="blocked_ips" rows="3" placeholder="one or more IPs, comma or newline separated"><?php echo html_escape($blocked_ips); ?></textarea>
-                <p class="text-muted mtop5">Requests from these IPs are rejected before rate limiting.</p>
+                <p class="text-muted mtop5">Requests from these IPs are rejected before rate limiting. Any IP that hits the rate limit is added here automatically.</p>
               </div>
               <div class="form-group">
                 <label for="allowed_custom_fields">Allowed custom field keys</label>
