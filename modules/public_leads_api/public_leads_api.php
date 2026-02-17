@@ -5,7 +5,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 /*
 Module Name: Leads API
 Description: Exposes a secure public endpoint that accepts form submissions from external sites and stores them as Perfex leads (including dynamic custom fields).
-Version: 1.1.9
+Version: 1.0.0
 Requires at least: 2.3.*
 Author: Nexgeno Technology
 */
