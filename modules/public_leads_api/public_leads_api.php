@@ -7,7 +7,7 @@ Module Name: Leads API
 Description: Exposes a secure public endpoint that accepts form submissions from external sites and stores them as Perfex leads (including dynamic custom fields).
 Version: 1.1.9
 Requires at least: 2.3.*
-Author: Codex
+Author: Nexgeno Technology
 */
 
 define('PUBLIC_LEADS_API_MODULE', 'public_leads_api');
