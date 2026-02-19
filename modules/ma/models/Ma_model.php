@@ -2371,6 +2371,7 @@ class Ma_model extends App_Model
 
                     break;
                 case 'after':
+                    $queued = false;
                     if(!isset($data['node']['data']['waiting_number'])){
                         $data['node']['data']['waiting_number'] = 1;
                     }
@@ -2415,9 +2416,53 @@ class Ma_model extends App_Model
                                     $this->ma_send_email($data['contact']['email'], $email, $data, $log_id);
                                 }
 
+                                $queued = true;
                                 return true;
+                            } else {
+                                ma_debug_log('handle_email_node.waiting', [
+                                    'campaign_id' => $data['campaign']->id,
+                                    'node_id' => $data['node']['id'] ?? null,
+                                    'last_node' => $connection['node'],
+                                    'logged_at' => $logs->dateadded,
+                                    'scheduled_after' => $data['node']['data']['waiting_number'].' '.$data['node']['data']['waiting_type'],
+                                    'ready_at' => $time,
+                                    'now' => date('Y-m-d H:i:s'),
+                                ]);
                             }
+                        } else {
+                            ma_debug_log('handle_email_node.missing_prev_log', [
+                                'campaign_id' => $data['campaign']->id,
+                                'node_id' => $data['node']['id'] ?? null,
+                                'last_node' => $connection['node'],
+                            ]);
                         }
+                    }
+
+                    // Fallback: if no previous node log found, still queue/send so the flow is not stuck
+                    if(!$queued){
+                        $email = $this->get_email($data['node']['data']['email']);
+                        $log_id = $this->save_email_log([
+                            'lead_id' => (isset($data['lead']) ? $data['lead']['id'] : 0), 
+                            'client_id' => (isset($data['client']) ? $data['client']['userid'] : 0), 
+                            'email_id' => $email->id, 
+                            'email_template_id' => $email->email_template, 
+                            'campaign_id' => $data['campaign']->id,
+                            'email' => $data['contact']['email'],
+                        ]);
+
+                        ma_debug_log('handle_email_node.queue_fallback', [
+                            'campaign_id' => $data['campaign']->id,
+                            'node_id' => $data['node']['id'] ?? null,
+                            'log_id' => $log_id,
+                            'mode' => 'after',
+                            'reason' => 'missing_prev_log',
+                        ]);
+
+                        if($testing || get_option('ma_email_sending_limit') != 1){
+                            $this->ma_send_email($data['contact']['email'], $email, $data, $log_id);
+                        }
+
+                        return true;
                     }
 
                     break;

@@ -1,1 +1,9 @@
 {"time":"2026-02-19 11:50:05","token":"f3b8d9d1","label":"handle_email_node.start","data":{"campaign_id":"49","node_id":2,"action":"after","contact_email":"webdeveloper@nexgeno.in","testing":true,"limit_enabled":false}}
+{"time":"2026-02-19 11:52:01","token":"75002ca5","label":"handle_email_node.start","data":{"campaign_id":"49","node_id":2,"action":"after","contact_email":"webdeveloper@nexgeno.in","testing":true,"limit_enabled":false}}
+{"time":"2026-02-19 11:54:14","token":"68e7bebf","label":"handle_email_node.start","data":{"campaign_id":"49","node_id":2,"action":"after","contact_email":"webdeveloper@nexgeno.in","testing":true,"limit_enabled":false}}
+{"time":"2026-02-19 11:54:14","token":"68e7bebf","label":"handle_email_node.missing_prev_log","data":{"campaign_id":"49","node_id":2,"last_node":"1"}}
+{"time":"2026-02-19 11:55:42","token":"ef915ff1","label":"handle_email_node.start","data":{"campaign_id":"49","node_id":2,"action":"after","contact_email":"webdeveloper@nexgeno.in","testing":true,"limit_enabled":false}}
+{"time":"2026-02-19 11:55:42","token":"ef915ff1","label":"handle_email_node.missing_prev_log","data":{"campaign_id":"49","node_id":2,"last_node":"1"}}
+{"time":"2026-02-19 11:55:42","token":"ef915ff1","label":"handle_email_node.queue_fallback","data":{"campaign_id":"49","node_id":2,"log_id":1315,"mode":"after","reason":"missing_prev_log"}}
+{"time":"2026-02-19 11:55:42","token":"ef915ff1","label":"ma_send_email.start","data":{"to":"webdeveloper@nexgeno.in","subject":"Channel One","email_id":"47","campaign_id":"49","log_id":1315,"using_design_id":""}}
+{"time":"2026-02-19 11:55:47","token":"ef915ff1","label":"ma_send_email.success","data":{"to":"webdeveloper@nexgeno.in","subject":"Channel One","log_id":1315}}
