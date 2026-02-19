@@ -2158,8 +2158,17 @@ class Ma_model extends App_Model
         $data = [];
         $data['campaign'] = $campaign;
         $data['workflow'] = $workflow;
+
+        ma_debug_log('run_campaigns.start', [
+            'campaign_id' => $id,
+            'workflow_nodes' => count($workflow),
+        ]);
         
         $leads = $this->get_lead_by_campaign($id);
+        ma_debug_log('run_campaigns.leads', [
+            'campaign_id' => $id,
+            'lead_count' => count($leads),
+        ]);
         foreach($leads as $lead){
             $data['lead'] = $lead;
             $data['contact'] = $lead;
@@ -2180,6 +2189,10 @@ class Ma_model extends App_Model
         }
 
         $clients = $this->get_client_by_campaign($id);
+        ma_debug_log('run_campaigns.clients', [
+            'campaign_id' => $id,
+            'client_count' => count($clients),
+        ]);
         foreach($clients as $client){
             $data['client'] = $client;
             $data['contact'] = $client;
@@ -2198,6 +2211,10 @@ class Ma_model extends App_Model
                 }
             }
         }
+
+        ma_debug_log('run_campaigns.end', [
+            'campaign_id' => $id,
+        ]);
 
         return true;
     }
@@ -2318,6 +2335,15 @@ class Ma_model extends App_Model
                 $data['node']['data']['complete_action'] = 'right_away';
             }
 
+            ma_debug_log('handle_email_node.start', [
+                'campaign_id' => $data['campaign']->id,
+                'node_id' => $data['node']['id'] ?? null,
+                'action' => $data['node']['data']['complete_action'],
+                'contact_email' => $data['contact']['email'],
+                'testing' => $testing,
+                'limit_enabled' => get_option('ma_email_sending_limit') == 1,
+            ]);
+
             switch ($data['node']['data']['complete_action']) {
                 case 'right_away':
                     $email = $this->get_email($data['node']['data']['email']);
@@ -2328,6 +2354,13 @@ class Ma_model extends App_Model
                         'email_template_id' => $email->email_template, 
                         'campaign_id' => $data['campaign']->id,
                         'email' => $data['contact']['email'],
+                    ]);
+
+                    ma_debug_log('handle_email_node.queue', [
+                        'campaign_id' => $data['campaign']->id,
+                        'node_id' => $data['node']['id'] ?? null,
+                        'log_id' => $log_id,
+                        'mode' => 'right_away',
                     ]);
                     
                     if($testing || get_option('ma_email_sending_limit') != 1){
@@ -2370,6 +2403,14 @@ class Ma_model extends App_Model
                                     'email' => $data['contact']['email'],
                                 ]);
 
+                                ma_debug_log('handle_email_node.queue', [
+                                    'campaign_id' => $data['campaign']->id,
+                                    'node_id' => $data['node']['id'] ?? null,
+                                    'log_id' => $log_id,
+                                    'mode' => 'after',
+                                    'waited_until' => $time,
+                                ]);
+
                                 if($testing || get_option('ma_email_sending_limit') != 1){
                                     $this->ma_send_email($data['contact']['email'], $email, $data, $log_id);
                                 }
@@ -2394,6 +2435,14 @@ class Ma_model extends App_Model
                             'email' => $data['contact']['email'],
                         ]);
 
+                        ma_debug_log('handle_email_node.queue', [
+                            'campaign_id' => $data['campaign']->id,
+                            'node_id' => $data['node']['id'] ?? null,
+                            'log_id' => $log_id,
+                            'mode' => 'exact_time',
+                            'scheduled_time' => $time,
+                        ]);
+
                         if($testing || get_option('ma_email_sending_limit') != 1){
                             $success = $this->ma_send_email($data['contact']['email'], $email, $data, $log_id);
                         }
@@ -2414,6 +2463,14 @@ class Ma_model extends App_Model
                             'email_template_id' => $email->email_template, 
                             'campaign_id' => $data['campaign']->id,
                             'email' => $data['contact']['email'],
+                        ]);
+
+                        ma_debug_log('handle_email_node.queue', [
+                            'campaign_id' => $data['campaign']->id,
+                            'node_id' => $data['node']['id'] ?? null,
+                            'log_id' => $log_id,
+                            'mode' => 'exact_time_and_date',
+                            'scheduled_time' => $time,
                         ]);
 
                         if($testing || get_option('ma_email_sending_limit') != 1){
@@ -4217,9 +4274,18 @@ class Ma_model extends App_Model
         $where = 'start_date <= "'.date('Y-m-d').'" AND end_date >= "'.date('Y-m-d').'" AND published = 1';
         $campaigns = $this->get_campaign('', $where);
 
+        ma_debug_log('ma_cron_campaign.start', [
+            'today' => date('Y-m-d'),
+            'campaign_count' => count($campaigns),
+        ]);
+
         foreach($campaigns as $campaign){
             $this->run_campaigns($campaign['id']);
         }
+
+        ma_debug_log('ma_cron_campaign.end', [
+            'today' => date('Y-m-d'),
+        ]);
 
         return true;
     }
@@ -5097,6 +5163,15 @@ class Ma_model extends App_Model
 
         $message = $this->parse_content_merge_fields(json_decode($content ?? ''), $data, $log_id);
 
+        ma_debug_log('ma_send_email.start', [
+            'to' => $email,
+            'subject' => $subject,
+            'email_id' => $ma_email_object->id ?? null,
+            'campaign_id' => $data['campaign']->id ?? null,
+            'log_id' => $log_id,
+            'using_design_id' => $email_design_id,
+        ]);
+
         $from_name = get_option('companyname');
         if($ma_email_object->from_name != ''){
             $from_name = $ma_email_object->from_name;
@@ -5250,12 +5325,24 @@ class Ma_model extends App_Model
                 $this->db->update(db_prefix().'ma_email_logs', ['delivery' => 1, 'delivery_time' => date('Y-m-d H:i:s'), 'bcc_address' => $bcc_address != '' ? 1 : 0]);
             }
 
+            ma_debug_log('ma_send_email.success', [
+                'to' => $cnf['email'],
+                'subject' => $cnf['subject'],
+                'log_id' => $log_id,
+            ]);
+
             return true;
         }else{
             if($log_id != ''){
                 $this->db->where('id', $log_id);
                 $this->db->update(db_prefix().'ma_email_logs', ['failed' => 1, 'failed_time' => date('Y-m-d H:i:s')]);
             }
+
+            ma_debug_log('ma_send_email.failed', [
+                'to' => $cnf['email'],
+                'subject' => $cnf['subject'],
+                'log_id' => $log_id,
+            ]);
         }
 
         return false;
@@ -6234,8 +6321,23 @@ class Ma_model extends App_Model
 
             $total = $count + ($count_bcc * 2);
             if($total >= get_option('ma_email_limit')){
+                ma_debug_log('check_email_sending_limit.blocked', [
+                    'window_start' => $time,
+                    'count' => $count,
+                    'count_bcc' => $count_bcc,
+                    'total' => $total,
+                    'limit' => get_option('ma_email_limit'),
+                ]);
                 return false;
             }
+
+            ma_debug_log('check_email_sending_limit.allowed', [
+                'window_start' => $time,
+                'count' => $count,
+                'count_bcc' => $count_bcc,
+                'total' => $total,
+                'limit' => get_option('ma_email_limit'),
+            ]);
         }
         return true;
     }
@@ -6293,6 +6395,13 @@ class Ma_model extends App_Model
         $content = $this->get_email_content_by_contact($ma_email_object->id, $data);
 
         $message = $this->parse_content_merge_fields(json_decode($content ?? ''), $data, $email_log['id']);
+
+        ma_debug_log('ma_send_email_limit.start', [
+            'log_id' => $email_log['id'],
+            'email_id' => $ma_email_object->id ?? null,
+            'to' => $email,
+            'campaign_id' => $email_log['campaign_id'] ?? null,
+        ]);
 
         $from_name = get_option('companyname');
         if($ma_email_object->from_name != ''){
@@ -6433,10 +6542,22 @@ class Ma_model extends App_Model
             $this->db->where('id', $email_log['id']);
             $this->db->update(db_prefix().'ma_email_logs', ['delivery' => 1, 'delivery_time' => date('Y-m-d H:i:s'), 'bcc_address' => $bcc_address != '' ? 1 : 0]);
 
+            ma_debug_log('ma_send_email_limit.success', [
+                'log_id' => $email_log['id'],
+                'to' => $cnf['email'],
+                'subject' => $cnf['subject'],
+            ]);
+
             return true;
         }else{
             $this->db->where('id', $email_log['id']);
             $this->db->update(db_prefix().'ma_email_logs', ['failed' => 1, 'failed_time' => date('Y-m-d H:i:s')]);
+
+            ma_debug_log('ma_send_email_limit.failed', [
+                'log_id' => $email_log['id'],
+                'to' => $cnf['email'],
+                'subject' => $cnf['subject'],
+            ]);
         }
 
         return false;
@@ -6445,14 +6566,26 @@ class Ma_model extends App_Model
     public function ma_cron_email_limit(){
         $this->db->where('delivery = 0 AND failed = 0 AND email IS NOT NULL');
         $email_logs = $this->db->get(db_prefix(). 'ma_email_logs')->result_array();
+
+        ma_debug_log('ma_cron_email_limit.start', [
+            'queue_size' => count($email_logs),
+        ]);
         
         foreach ($email_logs as $log) {
             if(!$this->check_email_sending_limit()){
+                ma_debug_log('ma_cron_email_limit.stop_limit', [
+                    'remaining_queue' => count($email_logs),
+                    'stopped_on_log_id' => $log['id'],
+                ]);
                 break;
             }
             
             $this->ma_send_email_limit($log);
         }
+
+        ma_debug_log('ma_cron_email_limit.end', [
+            'processed' => count($email_logs),
+        ]);
 
         return true;
     }

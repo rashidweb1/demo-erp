@@ -2,6 +2,38 @@
 defined('BASEPATH') or exit('No direct script access allowed');
 
 /**
+ * Lightweight debug logger for Marketing Automation flows.
+ * Writes JSON lines into temp/ma_debug.log with a per-request token.
+ *
+ * @param string $label  Short event name, e.g. 'ma_send_email.start'
+ * @param array  $data   Context data (no passwords or secrets)
+ */
+function ma_debug_log($label, $data = [])
+{
+    static $reqToken = null;
+
+    if ($reqToken === null) {
+        $reqToken = substr(md5(uniqid('', true)), 0, 8);
+    }
+
+    $logDir  = FCPATH . 'temp/';
+    $logFile = $logDir . 'ma_debug.log';
+
+    if (!is_dir($logDir)) {
+        @mkdir($logDir, 0755, true);
+    }
+
+    $entry = [
+        'time'   => date('Y-m-d H:i:s'),
+        'token'  => $reqToken,
+        'label'  => $label,
+        'data'   => $data,
+    ];
+
+    @file_put_contents($logFile, json_encode($entry) . PHP_EOL, FILE_APPEND | LOCK_EX);
+}
+
+/**
  * Handles upload for expenses receipt
  * @param  mixed $id expense id
  * @return void
