@@ -6397,6 +6397,8 @@ class Ma_model extends App_Model
 
         unset($data_insert['id']);
         $data_insert['name'] = $data['name'];
+        // Ensure cloned campaign is inactive so it cant run immediately after cloning.
+        $data_insert['published'] = 0;
         $data_insert['addedfrom'] = get_staff_user_id();
         $data_insert['dateadded'] = date('Y-m-d H:i:s');
 
