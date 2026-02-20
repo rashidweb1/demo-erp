@@ -2428,6 +2428,8 @@ class Ma_model extends App_Model
                                     'ready_at' => $time,
                                     'now' => date('Y-m-d H:i:s'),
                                 ]);
+                                // Respect wait window: stop processing this node until ready
+                                return false;
                             }
                         } else {
                             ma_debug_log('handle_email_node.missing_prev_log', [
