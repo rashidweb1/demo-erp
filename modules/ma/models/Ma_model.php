@@ -4638,12 +4638,19 @@ class Ma_model extends App_Model
      * @return string
      */
     public function parse_content_merge_fields($content, $data = [], $log_id = ''){
+        $content = (string)($content ?? '');
+        $is_test = isset($data['is_test']) && $data['is_test'] === true;
+
         if (!class_exists('other_merge_fields', false)) {
             $this->load->library('merge_fields/other_merge_fields');
         }
 
         $merge_fields = [];
         $merge_fields = array_merge($merge_fields, $this->other_merge_fields->format());
+
+        if($is_test){
+            $content = $this->apply_test_merge_field_defaults($content);
+        }
 
         foreach ($merge_fields as $key => $val) {
             $content = stripos($content ?? '', $key) !== false
@@ -4717,6 +4724,65 @@ class Ma_model extends App_Model
             $content = str_replace('DECLINE_BTN', _l('decline'), $content ?? '');
             
             $content .= '<img alt="" src="'.site_url('ma/ma_public/images/'.$email_log->hash.'.jpg').'" width="1" height="1" />';
+        }
+
+        return $content;
+    }
+
+    /**
+     * Replace lead & client merge fields with readable dummy values during test runs.
+     */
+    private function apply_test_merge_field_defaults($content){
+        $lead_fields = [
+            '{lead_name}'               => 'Name Here',
+            '{lead_first_name}'         => 'First Name',
+            '{lead_last_name}'          => 'Last Name',
+            '{lead_email}'              => 'lead@example.com',
+            '{lead_position}'           => 'Lead Position',
+            '{lead_company}'            => 'Lead Company',
+            '{lead_country}'            => 'Country Here',
+            '{lead_zip}'                => 'Zip Here',
+            '{lead_city}'               => 'City Here',
+            '{lead_state}'              => 'State Here',
+            '{lead_address}'            => '123 Example Street',
+            '{lead_assigned}'           => 'Owner Name',
+            '{lead_status}'             => 'Status Here',
+            '{lead_source}'             => 'Source Here',
+            '{lead_phonenumber}'        => '+1 (000) 000-0000',
+            '{lead_link}'               => site_url('leads/test'),
+            '{lead_website}'            => 'https://example.com',
+            '{lead_description}'        => 'Sample lead description',
+            '{lead_public_form_url}'    => site_url(),
+            '{lead_public_consent_url}' => site_url(),
+        ];
+
+        $client_fields = [
+            '{contact_firstname}'       => 'First Name',
+            '{contact_lastname}'        => 'Last Name',
+            '{contact_email}'           => 'customer@example.com',
+            '{contact_phonenumber}'     => '+1 (000) 000-0000',
+            '{contact_title}'           => 'Job Title Here',
+            '{client_company}'          => 'Client Company',
+            '{client_phonenumber}'      => '+1 (000) 000-0000',
+            '{client_country}'          => 'Country Here',
+            '{client_city}'             => 'City Here',
+            '{client_zip}'              => 'Zip Here',
+            '{client_state}'            => 'State Here',
+            '{client_address}'          => '456 Client Street',
+            '{client_website}'          => 'https://client.example.com',
+            '{client_vat_number}'       => 'VAT-0000',
+            '{client_id}'               => 'CUST-001',
+            '{set_password_url}'        => site_url(),
+            '{email_verification_url}'  => site_url(),
+            '{reset_password_url}'      => site_url(),
+        ];
+
+        foreach ($lead_fields as $key => $val) {
+            $content = str_replace($key, $val, $content ?? '');
+        }
+
+        foreach ($client_fields as $key => $val) {
+            $content = str_replace($key, $val, $content ?? '');
         }
 
         return $content;
@@ -6757,6 +6823,8 @@ class Ma_model extends App_Model
         $data = [];
         $data['campaign'] = $campaign;
         $data['workflow'] = $workflow;
+        // mark test mode so merge fields can be filled with professional dummy data
+        $data['is_test'] = true;
         
         $campaign_test = $this->get_campaign_test($id);
         if($campaign_test){
