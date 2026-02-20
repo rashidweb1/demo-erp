@@ -4756,6 +4756,16 @@ class Ma_model extends App_Model
             '{lead_public_consent_url}' => site_url(),
         ];
 
+        $other_fields = [
+            '{crm_url}'                  => site_url(),
+            '{admin_url}'                => admin_url(),
+            '{main_domain}'              => parse_url(site_url(), PHP_URL_HOST) ?? 'example.com',
+            '{companyname}'              => get_option('companyname') ?: 'Company Name',
+            '{email_signature}'          => get_option('email_signature') ?: 'Email Signature',
+            '{terms_and_conditions_url}' => terms_url(),
+            '{privacy_policy_url}'       => privacy_policy_url(),
+        ];
+
         $client_fields = [
             '{contact_firstname}'       => 'First Name',
             '{contact_lastname}'        => 'Last Name',
@@ -4775,14 +4785,33 @@ class Ma_model extends App_Model
             '{set_password_url}'        => site_url(),
             '{email_verification_url}'  => site_url(),
             '{reset_password_url}'      => site_url(),
+            '{contact_public_consent_url}' => site_url(),
         ];
 
         foreach ($lead_fields as $key => $val) {
             $content = str_replace($key, $val, $content ?? '');
         }
 
+        // Replace lead custom fields
+        $lead_custom_fields = get_custom_fields('leads', [], true);
+        foreach ($lead_custom_fields as $field) {
+            $placeholder = '{' . $field['slug'] . '}';
+            $content     = str_replace($placeholder, $field['name'] . ' Value', $content ?? '');
+        }
+
+        foreach ($other_fields as $key => $val) {
+            $content = str_replace($key, $val, $content ?? '');
+        }
+
         foreach ($client_fields as $key => $val) {
             $content = str_replace($key, $val, $content ?? '');
+        }
+
+        // Replace customer/contact custom fields
+        $customer_custom_fields = get_custom_fields('customers', [], true);
+        foreach ($customer_custom_fields as $field) {
+            $placeholder = '{' . $field['slug'] . '}';
+            $content     = str_replace($placeholder, $field['name'] . ' Value', $content ?? '');
         }
 
         return $content;
