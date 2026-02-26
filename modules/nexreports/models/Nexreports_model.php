@@ -714,6 +714,14 @@ private function get_staff_attendance_data($staff_id, $filters = [])
     $ot_stats = $this->get_ot_statistics($staff_id, $date_range);
     
     $leave_data = $this->get_leave_data_from_requisition($staff_id, $date_range);
+    // If payroll/timesheets integration is on, use payroll's paid-leave hours (from timesheets_timesheet) to mirror payslip
+    $payroll_leave_hours = $this->get_payroll_paid_leave_hours($staff_id, $date_range);
+    if ($payroll_leave_hours !== null) {
+        $leave_data = [
+            'leave_hours' => round($payroll_leave_hours, 2),
+            'status'      => $payroll_leave_hours > 0 ? 'approved' : 'none'
+        ];
+    }
     // ✅ get year from selected period (VERY IMPORTANT)
     $selected_year = date('Y', strtotime($date_range['from']));
     $leave_stats = $this->get_leave_statistics($staff_id, $date_range, $selected_year);
@@ -1039,6 +1047,39 @@ private function get_payroll_timesheet_hours($staff_id, $date_range)
     }
 
     return round($hours, 2);
+}
+
+/**
+ * Mirror payroll paid leave hours from timesheets_timesheet (types in integration_paid_leave)
+ * Returns null if payroll integration not active.
+ */
+private function get_payroll_paid_leave_hours($staff_id, $date_range)
+{
+    if (!function_exists('hr_payroll_get_status_modules') || !function_exists('get_hr_payroll_option')) {
+        return null;
+    }
+    if (!hr_payroll_get_status_modules('timesheets') || (int)get_hr_payroll_option('integrated_timesheets') !== 1) {
+        return null;
+    }
+
+    $paid_leave_types = new_explode(',', get_hr_payroll_option('integration_paid_leave'));
+    if (empty($paid_leave_types)) {
+        return null;
+    }
+
+    $this->db->select_sum('value', 'total_paid_leave');
+    $this->db->from(db_prefix() . 'timesheets_timesheet');
+    $this->db->where('staff_id', $staff_id);
+    $this->db->where_in('type', $paid_leave_types);
+    $this->db->where('date_work >=', $date_range['from']);
+    $this->db->where('date_work <=', $date_range['to']);
+
+    $row = $this->db->get()->row();
+    if (!$row) {
+        return null;
+    }
+
+    return (float) ($row->total_paid_leave ?? 0);
 }
 
 /**
