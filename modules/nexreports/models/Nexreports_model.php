@@ -754,11 +754,17 @@ private function get_staff_attendance_data($staff_id, $filters = [])
         }
     }
     
-    // ✅ Payable hours = checkin hours + OT + leave
-    $payable_hours = $checkin_hours;
+    // ✅ Remove OT from check-in hours so we don't double count (check-in logs often include OT duration)
+    $regular_checkin_hours = max(0, $checkin_hours - $ot_data['ot_hours']);
+
+    // ✅ Payable hours = regular checkin hours + OT + leave
+    $payable_hours = $regular_checkin_hours;
 
     // Add approved OT
     if ($ot_data['status'] === 'approved') {
+        $payable_hours += $ot_data['ot_hours'];
+    } elseif ($ot_data['status'] === 'has_records') {
+        // Mixed statuses but ot_hours already contains only approved portion
         $payable_hours += $ot_data['ot_hours'];
     }
 
@@ -783,7 +789,8 @@ private function get_staff_attendance_data($staff_id, $filters = [])
         'task_timer_hours'       => round($task_timer_data['total_hours'], 1),
         'task_timer_count'       => $task_timer_data['count'],
         'task_timer_breakdown'   => $task_timer_data['breakdown'],
-        'checkin_hours'          => round($checkin_hours, 1),
+        // Show regular hours only (OT removed)
+        'checkin_hours'          => round($regular_checkin_hours, 1),
         'ot_hours'               => round($ot_data['ot_hours'], 1),
         'ot_status'              => $ot_data['status'],
         'ot_statistics'          => $ot_stats['display'],
