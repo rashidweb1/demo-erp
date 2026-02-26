@@ -702,8 +702,12 @@ private function get_staff_attendance_data($staff_id, $filters = [])
     // ✅ Get ONLY task timer data - this is what shows in Timesheet Hours column
     $task_timer_data = $this->get_task_timer_hours_detailed($staff_id, $date_range);
     
-    // Get check-in/out hours
-    $checkin_hours = $this->get_checkin_checkout_hours($staff_id, $date_range);
+    // Get check-in/out hours (try to mirror payroll's timesheet calculation first)
+    $checkin_hours = $this->get_payroll_timesheet_hours($staff_id, $date_range);
+    if ($checkin_hours === null) {
+        // Fallback to legacy check-in/out calculation
+        $checkin_hours = $this->get_checkin_checkout_hours($staff_id, $date_range);
+    }
     
     // Get OT data
     $ot_data = $this->get_ot_hours_and_status($staff_id, $date_range);
@@ -928,7 +932,6 @@ private function get_checkin_checkout_hours($staff_id, $date_range)
         
         // Process each shift (staff might have multiple shifts in a day)
         $day_hours = 0;
-        $lunch_time = 0;
         
         foreach ($shifts as $shift) {
             // Get shift type details
@@ -965,22 +968,70 @@ private function get_checkin_checkout_hours($staff_id, $date_range)
                 continue;
             }
             
-            // Calculate lunch break deduction if check-out is after lunch end
-            if ($time_out >= $end_lunch) {
-                $lunch_time += ($end_lunch - $start_lunch) / 3600;
-            }
-            
             // Calculate work hours for this shift
             $shift_hours = ($time_out - $time_in) / 3600;
-            $day_hours += $shift_hours;
+
+            // Deduct only the overlapping portion of lunch (avoids over‑deduction when staff arrives after lunch)
+            $lunch_overlap_seconds = 0;
+            if ($time_out > $start_lunch && $time_in < $end_lunch) {
+                $lunch_overlap_seconds = min($time_out, $end_lunch) - max($time_in, $start_lunch);
+            }
+
+            $shift_hours -= ($lunch_overlap_seconds / 3600);
+            $day_hours += max(0, $shift_hours);
         }
         
-        // Subtract lunch time from total hours
-        $net_hours = $day_hours - $lunch_time;
-        $total_hours += max(0, $net_hours); // Ensure non-negative
+        // Subtracted lunch inside shift loop; just accumulate
+        $total_hours += $day_hours;
     }
     
     return round($total_hours, 2);
+}
+
+/**
+ * Mirror HR Payroll timesheet hour calculation (used for payslips)
+ * Returns null if payroll/timesheets integration is not available.
+ */
+private function get_payroll_timesheet_hours($staff_id, $date_range)
+{
+    // Payroll helpers may not exist in all installs
+    if (!function_exists('hr_payroll_get_status_modules') || !function_exists('get_hr_payroll_option')) {
+        return null;
+    }
+
+    // Ensure timesheets module is integrated with payroll
+    if (!hr_payroll_get_status_modules('timesheets') || (int)get_hr_payroll_option('integrated_timesheets') !== 1) {
+        return null;
+    }
+
+    // Types that payroll counts as actual workday
+    $actual_workday_types = new_explode(',', get_hr_payroll_option('integration_actual_workday'));
+    if (empty($actual_workday_types)) {
+        return null;
+    }
+
+    // Sum value field (stored in hours) for the period
+    $this->db->select_sum('value', 'total_hours');
+    $this->db->from(db_prefix() . 'timesheets_timesheet');
+    $this->db->where('staff_id', $staff_id);
+    $this->db->where_in('type', $actual_workday_types);
+    $this->db->where('date_work >=', $date_range['from']);
+    $this->db->where('date_work <=', $date_range['to']);
+
+    $row = $this->db->get()->row();
+
+    if (!$row) {
+        return null;
+    }
+
+    $hours = (float)($row->total_hours ?? 0);
+
+    // If no data, return null to allow fallback
+    if ($hours == 0) {
+        return null;
+    }
+
+    return round($hours, 2);
 }
 
 /**
