@@ -6345,6 +6345,8 @@ class Ma_model extends App_Model
         $data_insert['name'] = $data['name'];
         $data_insert['addedfrom'] = get_staff_user_id();
         $data_insert['dateadded'] = date('Y-m-d H:i:s');
+        // Newly cloned campaigns should start unpublished to avoid accidental activation
+        $data_insert['published'] = 0;
 
         $this->db->insert(db_prefix().'ma_campaigns', $data_insert);
 
