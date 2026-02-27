@@ -2208,11 +2208,29 @@ class Ma_model extends App_Model
      */
     public function run_workflow_node($data){
         $output = $this->check_workflow_node_log($data);
+        $this->log_campaign_debug(
+            'ma.workflow.node.enter',
+            'Evaluating workflow node for campaign firing',
+            $this->build_campaign_log_payload($data, ['existing_output' => $output])
+        );
         
         if(!$output){
             switch ($data['node']['class']) {
                 case 'email':
+                    $this->log_campaign_debug(
+                        'ma.workflow.node.email',
+                        'Processing email node',
+                        $this->build_campaign_log_payload($data, [
+                            'email_template_id' => $data['node']['data']['email'] ?? null,
+                            'contact_email'     => $data['contact']['email'] ?? null,
+                        ])
+                    );
                     $success = $this->handle_email_node($data);
+                    $this->log_campaign_debug(
+                        'ma.workflow.node.email.result',
+                        'Email node result',
+                        $this->build_campaign_log_payload($data, ['success' => $success])
+                    );
 
                     if($success){
                         $this->save_workflow_node_log($data);
@@ -2226,7 +2244,20 @@ class Ma_model extends App_Model
                     break;
 
                 case 'sms':
+                    $this->log_campaign_debug(
+                        'ma.workflow.node.sms',
+                        'Processing sms node',
+                        $this->build_campaign_log_payload($data, [
+                            'text_message_id' => $data['node']['data']['sms'] ?? null,
+                            'contact_phone'   => $data['contact']['phonenumber'] ?? null,
+                        ])
+                    );
                     $success = $this->handle_sms_node($data);
+                    $this->log_campaign_debug(
+                        'ma.workflow.node.sms.result',
+                        'SMS node result',
+                        $this->build_campaign_log_payload($data, ['success' => $success])
+                    );
 
                     if($success){
                         $this->save_workflow_node_log($data);
@@ -2240,7 +2271,17 @@ class Ma_model extends App_Model
                     break;
 
                 case 'action':
+                    $this->log_campaign_debug(
+                        'ma.workflow.node.action',
+                        'Processing action node',
+                        $this->build_campaign_log_payload($data, ['action' => $data['node']['data']['action'] ?? null])
+                    );
                     $success = $this->handle_action_node($data);
+                    $this->log_campaign_debug(
+                        'ma.workflow.node.action.result',
+                        'Action node result',
+                        $this->build_campaign_log_payload($data, ['success' => $success])
+                    );
 
                     if($success){
                         $this->save_workflow_node_log($data);
@@ -2255,6 +2296,11 @@ class Ma_model extends App_Model
 
                 case 'condition':
                     $success = $this->handle_condition_node($data);
+                    $this->log_campaign_debug(
+                        'ma.workflow.node.condition',
+                        'Condition node evaluated',
+                        $this->build_campaign_log_payload($data, ['result' => $success])
+                    );
                     if($success == 'output_1'){
                         $this->save_workflow_node_log($data);
 
@@ -2276,6 +2322,11 @@ class Ma_model extends App_Model
 
                 case 'filter':
                     $success = $this->handle_filter_node($data);
+                    $this->log_campaign_debug(
+                        'ma.workflow.node.filter',
+                        'Filter node evaluated',
+                        $this->build_campaign_log_payload($data, ['result' => $success])
+                    );
                     if($success == 'output_1'){
                         $this->save_workflow_node_log($data);
 
@@ -2295,10 +2346,19 @@ class Ma_model extends App_Model
                     break;
 
                 default:
-                    // code...
+                    $this->log_campaign_debug(
+                        'ma.workflow.node.unhandled',
+                        'Workflow node class not handled',
+                        $this->build_campaign_log_payload($data)
+                    );
                     break;
             }
         }else{
+            $this->log_campaign_debug(
+                'ma.workflow.node.skip',
+                'Node already executed, using stored output route',
+                $this->build_campaign_log_payload($data, ['existing_output' => $output])
+            );
             foreach ($data['node']['outputs'][$output]['connections'] as $connection) {
                 $data['node'] = $data['workflow'][$connection['node']];
                 $this->run_workflow_node($data);
@@ -2306,6 +2366,39 @@ class Ma_model extends App_Model
         }
 
         return true;
+    }
+
+    /**
+     * Build a compact payload for workflow debug logging.
+     */
+    protected function build_campaign_log_payload($data, $extra = [])
+    {
+        $payload = [
+            'campaign_id' => $data['campaign']->id ?? null,
+            'lead_id'     => $data['lead']['id'] ?? null,
+            'client_id'   => $data['client']['userid'] ?? ($data['client']['id'] ?? null),
+            'node'        => [
+                'id'    => $data['node']['id'] ?? null,
+                'class' => $data['node']['class'] ?? null,
+                'name'  => $data['node']['name'] ?? null,
+            ],
+        ];
+
+        if (isset($data['node']['data'])) {
+            $payload['node']['data'] = $data['node']['data'];
+        }
+
+        return array_merge($payload, $extra);
+    }
+
+    /**
+     * Wrapper to centralize MA debug logging and avoid fatal errors if helper is missing.
+     */
+    protected function log_campaign_debug($label, $description, $payload = [])
+    {
+        if (function_exists('ma_debug_log')) {
+            ma_debug_log($label, $description, $payload);
+        }
     }
 
     /**

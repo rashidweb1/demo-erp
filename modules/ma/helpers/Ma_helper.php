@@ -2,6 +2,33 @@
 defined('BASEPATH') or exit('No direct script access allowed');
 
 /**
+ * Lightweight debug logger for the MA module.
+ * Each entry is a single JSON line with timestamp, label, description and payload
+ * to make campaign execution debugging easier.
+ */
+if (!function_exists('ma_debug_log')) {
+    function ma_debug_log($label, $description, $data = [], $context = [])
+    {
+        $logDir = __DIR__ . '/../logs';
+        if (!is_dir($logDir)) {
+            @mkdir($logDir, 0755, true);
+        }
+
+        $entry = [
+            'timestamp'   => date('Y-m-d H:i:s'),
+            'label'       => $label,
+            'description' => $description,
+            'data'        => $data,
+            'context'     => $context,
+        ];
+
+        $line = json_encode($entry, JSON_UNESCAPED_SLASHES);
+        // Avoid failing the main request if logging is not possible.
+        @file_put_contents($logDir . '/ma_debug.log', $line . PHP_EOL, FILE_APPEND);
+    }
+}
+
+/**
  * Handles upload for expenses receipt
  * @param  mixed $id expense id
  * @return void
