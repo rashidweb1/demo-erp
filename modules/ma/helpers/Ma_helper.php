@@ -2,67 +2,6 @@
 defined('BASEPATH') or exit('No direct script access allowed');
 
 /**
- * Lightweight debug logger for Marketing Automation flows.
- * Writes JSON lines into temp/ma_debug.log with a per-request token.
- *
- * @param string $label  Short event name, e.g. 'ma_send_email.start'
- * @param array  $data   Context data (no passwords or secrets)
- */
-function ma_debug_log($label, $data = [])
-{
-    static $reqToken = null;
-
-    if ($reqToken === null) {
-        $reqToken = substr(md5(uniqid('', true)), 0, 8);
-    }
-
-    // Human-friendly descriptions per log label to make temp/ma_debug.log easier to read
-    static $labelDescriptions = [
-        'ma_run_campaign.start'              => 'Entry point triggered (manual/cron) to run MA tasks.',
-        'ma_run_campaign.end'                => 'Wrapper finished running MA tasks.',
-        'ma_cron_campaign.start'             => 'Cron started scanning/pushing today\'s campaigns.',
-        'ma_cron_campaign.end'               => 'Cron finished campaign scan/push.',
-        'run_campaigns.start'                => 'Begin executing a single campaign workflow.',
-        'run_campaigns.leads'                => 'Fetched leads targeted by the campaign.',
-        'run_campaigns.clients'              => 'Fetched clients targeted by the campaign.',
-        'run_campaigns.end'                  => 'Completed execution of the campaign workflow.',
-        'handle_email_node.start'            => 'Processing an email node inside the campaign flow.',
-        'handle_email_node.queue'            => 'Queued email for send (immediate or scheduled).',
-        'handle_email_node.waiting'          => 'Waiting because a previous email log is required.',
-        'handle_email_node.missing_prev_log' => 'Previous email log could not be found for the node.',
-        'handle_email_node.queue_fallback'   => 'Fallback queueing path when primary queue is unavailable.',
-        'ma_send_email.start'                => 'Preparing to build and dispatch an email.',
-        'ma_send_email.success'              => 'Email was sent successfully.',
-        'ma_send_email.failed'               => 'Email failed to send.',
-        'check_email_sending_limit.blocked'  => 'Sending blocked by configured email throttling.',
-        'check_email_sending_limit.allowed'  => 'Sending allowed under current throttling rules.',
-        'ma_send_email_limit.start'          => 'Cron evaluating queued emails against limits.',
-        'ma_send_email_limit.success'        => 'Queued email released/sent under limits.',
-        'ma_send_email_limit.failed'         => 'Queued email failed while applying limits.',
-        'ma_cron_email_limit.start'          => 'Cron started enforcing daily email limits.',
-        'ma_cron_email_limit.stop_limit'     => 'Stopped processing because the limit was reached.',
-        'ma_cron_email_limit.end'            => 'Finished enforcing email limits for this run.',
-    ];
-
-    $logDir  = FCPATH . 'temp/';
-    $logFile = $logDir . 'ma_debug.log';
-
-    if (!is_dir($logDir)) {
-        @mkdir($logDir, 0755, true);
-    }
-
-    $entry = [
-        'time'   => date('Y-m-d H:i:s'),
-        'token'  => $reqToken,
-        'label'  => $label,
-        'description' => $labelDescriptions[$label] ?? 'No description registered for this label.',
-        'data'   => $data,
-    ];
-
-    @file_put_contents($logFile, json_encode($entry) . PHP_EOL, FILE_APPEND | LOCK_EX);
-}
-
-/**
  * Handles upload for expenses receipt
  * @param  mixed $id expense id
  * @return void

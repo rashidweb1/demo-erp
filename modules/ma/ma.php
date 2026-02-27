@@ -478,11 +478,9 @@ function ma_run_campaign($manually)
         $CI = &get_instance();
 
         $CI->load->model('ma/ma_model');
-        ma_debug_log('ma_run_campaign.start', ['manually' => $manually]);
         $CI->ma_model->ma_cron_campaign();
         $CI->ma_model->ma_cron_email_limit();
         $CI->ma_model->ma_cron_test_campaign();
-        ma_debug_log('ma_run_campaign.end', ['manually' => $manually]);
 }
 
 

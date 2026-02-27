@@ -2158,17 +2158,8 @@ class Ma_model extends App_Model
         $data = [];
         $data['campaign'] = $campaign;
         $data['workflow'] = $workflow;
-
-        ma_debug_log('run_campaigns.start', [
-            'campaign_id' => $id,
-            'workflow_nodes' => count($workflow),
-        ]);
         
         $leads = $this->get_lead_by_campaign($id);
-        ma_debug_log('run_campaigns.leads', [
-            'campaign_id' => $id,
-            'lead_count' => count($leads),
-        ]);
         foreach($leads as $lead){
             $data['lead'] = $lead;
             $data['contact'] = $lead;
@@ -2189,10 +2180,6 @@ class Ma_model extends App_Model
         }
 
         $clients = $this->get_client_by_campaign($id);
-        ma_debug_log('run_campaigns.clients', [
-            'campaign_id' => $id,
-            'client_count' => count($clients),
-        ]);
         foreach($clients as $client){
             $data['client'] = $client;
             $data['contact'] = $client;
@@ -2211,10 +2198,6 @@ class Ma_model extends App_Model
                 }
             }
         }
-
-        ma_debug_log('run_campaigns.end', [
-            'campaign_id' => $id,
-        ]);
 
         return true;
     }
@@ -2335,15 +2318,6 @@ class Ma_model extends App_Model
                 $data['node']['data']['complete_action'] = 'right_away';
             }
 
-            ma_debug_log('handle_email_node.start', [
-                'campaign_id' => $data['campaign']->id,
-                'node_id' => $data['node']['id'] ?? null,
-                'action' => $data['node']['data']['complete_action'],
-                'contact_email' => $data['contact']['email'],
-                'testing' => $testing,
-                'limit_enabled' => get_option('ma_email_sending_limit') == 1,
-            ]);
-
             switch ($data['node']['data']['complete_action']) {
                 case 'right_away':
                     $email = $this->get_email($data['node']['data']['email']);
@@ -2355,13 +2329,6 @@ class Ma_model extends App_Model
                         'campaign_id' => $data['campaign']->id,
                         'email' => $data['contact']['email'],
                     ]);
-
-                    ma_debug_log('handle_email_node.queue', [
-                        'campaign_id' => $data['campaign']->id,
-                        'node_id' => $data['node']['id'] ?? null,
-                        'log_id' => $log_id,
-                        'mode' => 'right_away',
-                    ]);
                     
                     if($testing || get_option('ma_email_sending_limit') != 1){
                         $this->ma_send_email($data['contact']['email'], $email, $data, $log_id);
@@ -2371,7 +2338,6 @@ class Ma_model extends App_Model
 
                     break;
                 case 'after':
-                    $queued = false;
                     if(!isset($data['node']['data']['waiting_number'])){
                         $data['node']['data']['waiting_number'] = 1;
                     }
@@ -2404,67 +2370,13 @@ class Ma_model extends App_Model
                                     'email' => $data['contact']['email'],
                                 ]);
 
-                                ma_debug_log('handle_email_node.queue', [
-                                    'campaign_id' => $data['campaign']->id,
-                                    'node_id' => $data['node']['id'] ?? null,
-                                    'log_id' => $log_id,
-                                    'mode' => 'after',
-                                    'waited_until' => $time,
-                                ]);
-
                                 if($testing || get_option('ma_email_sending_limit') != 1){
                                     $this->ma_send_email($data['contact']['email'], $email, $data, $log_id);
                                 }
 
-                                $queued = true;
                                 return true;
-                            } else {
-                                ma_debug_log('handle_email_node.waiting', [
-                                    'campaign_id' => $data['campaign']->id,
-                                    'node_id' => $data['node']['id'] ?? null,
-                                    'last_node' => $connection['node'],
-                                    'logged_at' => $logs->dateadded,
-                                    'scheduled_after' => $data['node']['data']['waiting_number'].' '.$data['node']['data']['waiting_type'],
-                                    'ready_at' => $time,
-                                    'now' => date('Y-m-d H:i:s'),
-                                ]);
-                                // Respect wait window: stop processing this node until ready
-                                return false;
                             }
-                        } else {
-                            ma_debug_log('handle_email_node.missing_prev_log', [
-                                'campaign_id' => $data['campaign']->id,
-                                'node_id' => $data['node']['id'] ?? null,
-                                'last_node' => $connection['node'],
-                            ]);
                         }
-                    }
-
-                    // Fallback: if no previous node log found, still queue/send so the flow is not stuck
-                    if(!$queued){
-                        $email = $this->get_email($data['node']['data']['email']);
-                        $log_id = $this->save_email_log([
-                            'lead_id' => (isset($data['lead']) ? $data['lead']['id'] : 0), 
-                            'client_id' => (isset($data['client']) ? $data['client']['userid'] : 0), 
-                            'email_id' => $email->id, 
-                            'email_template_id' => $email->email_template, 
-                            'campaign_id' => $data['campaign']->id,
-                            'email' => $data['contact']['email'],
-                        ]);
-
-                        ma_debug_log('handle_email_node.queue_fallback', [
-                            'campaign_id' => $data['campaign']->id,
-                            'node_id' => $data['node']['id'] ?? null,
-                            'log_id' => $log_id,
-                            'mode' => 'after',
-                            'reason' => 'missing_prev_log',
-                        ]);
-
-                        if($testing || get_option('ma_email_sending_limit') != 1){
-                            $this->ma_send_email($data['contact']['email'], $email, $data, $log_id);
-                        }
-
-                        return true;
                     }
 
                     break;
@@ -2480,14 +2392,6 @@ class Ma_model extends App_Model
                             'email_template_id' => $email->email_template, 
                             'campaign_id' => $data['campaign']->id,
                             'email' => $data['contact']['email'],
-                        ]);
-
-                        ma_debug_log('handle_email_node.queue', [
-                            'campaign_id' => $data['campaign']->id,
-                            'node_id' => $data['node']['id'] ?? null,
-                            'log_id' => $log_id,
-                            'mode' => 'exact_time',
-                            'scheduled_time' => $time,
                         ]);
 
                         if($testing || get_option('ma_email_sending_limit') != 1){
@@ -2510,14 +2414,6 @@ class Ma_model extends App_Model
                             'email_template_id' => $email->email_template, 
                             'campaign_id' => $data['campaign']->id,
                             'email' => $data['contact']['email'],
-                        ]);
-
-                        ma_debug_log('handle_email_node.queue', [
-                            'campaign_id' => $data['campaign']->id,
-                            'node_id' => $data['node']['id'] ?? null,
-                            'log_id' => $log_id,
-                            'mode' => 'exact_time_and_date',
-                            'scheduled_time' => $time,
                         ]);
 
                         if($testing || get_option('ma_email_sending_limit') != 1){
@@ -4321,18 +4217,9 @@ class Ma_model extends App_Model
         $where = 'start_date <= "'.date('Y-m-d').'" AND end_date >= "'.date('Y-m-d').'" AND published = 1';
         $campaigns = $this->get_campaign('', $where);
 
-        ma_debug_log('ma_cron_campaign.start', [
-            'today' => date('Y-m-d'),
-            'campaign_count' => count($campaigns),
-        ]);
-
         foreach($campaigns as $campaign){
             $this->run_campaigns($campaign['id']);
         }
-
-        ma_debug_log('ma_cron_campaign.end', [
-            'today' => date('Y-m-d'),
-        ]);
 
         return true;
     }
@@ -4640,19 +4527,12 @@ class Ma_model extends App_Model
      * @return string
      */
     public function parse_content_merge_fields($content, $data = [], $log_id = ''){
-        $content = (string)($content ?? '');
-        $is_test = isset($data['is_test']) && $data['is_test'] === true;
-
         if (!class_exists('other_merge_fields', false)) {
             $this->load->library('merge_fields/other_merge_fields');
         }
 
         $merge_fields = [];
         $merge_fields = array_merge($merge_fields, $this->other_merge_fields->format());
-
-        if($is_test){
-            $content = $this->apply_test_merge_field_defaults($content);
-        }
 
         foreach ($merge_fields as $key => $val) {
             $content = stripos($content ?? '', $key) !== false
@@ -4726,94 +4606,6 @@ class Ma_model extends App_Model
             $content = str_replace('DECLINE_BTN', _l('decline'), $content ?? '');
             
             $content .= '<img alt="" src="'.site_url('ma/ma_public/images/'.$email_log->hash.'.jpg').'" width="1" height="1" />';
-        }
-
-        return $content;
-    }
-
-    /**
-     * Replace lead & client merge fields with readable dummy values during test runs.
-     */
-    private function apply_test_merge_field_defaults($content){
-        $lead_fields = [
-            '{lead_name}'               => 'Name Here',
-            '{lead_first_name}'         => 'First Name',
-            '{lead_last_name}'          => 'Last Name',
-            '{lead_email}'              => 'lead@example.com',
-            '{lead_position}'           => 'Lead Position',
-            '{lead_company}'            => 'Lead Company',
-            '{lead_country}'            => 'Country Here',
-            '{lead_zip}'                => 'Zip Here',
-            '{lead_city}'               => 'City Here',
-            '{lead_state}'              => 'State Here',
-            '{lead_address}'            => '123 Example Street',
-            '{lead_assigned}'           => 'Owner Name',
-            '{lead_status}'             => 'Status Here',
-            '{lead_source}'             => 'Source Here',
-            '{lead_phonenumber}'        => '+1 (000) 000-0000',
-            '{lead_link}'               => site_url('leads/test'),
-            '{lead_website}'            => 'https://example.com',
-            '{lead_description}'        => 'Sample lead description',
-            '{lead_public_form_url}'    => site_url(),
-            '{lead_public_consent_url}' => site_url(),
-        ];
-
-        $other_fields = [
-            '{crm_url}'                  => site_url(),
-            '{admin_url}'                => admin_url(),
-            '{main_domain}'              => parse_url(site_url(), PHP_URL_HOST) ?? 'example.com',
-            '{companyname}'              => get_option('companyname') ?: 'Company Name',
-            '{email_signature}'          => get_option('email_signature') ?: 'Email Signature',
-            '{terms_and_conditions_url}' => terms_url(),
-            '{privacy_policy_url}'       => privacy_policy_url(),
-        ];
-
-        $client_fields = [
-            '{contact_firstname}'       => 'First Name',
-            '{contact_lastname}'        => 'Last Name',
-            '{contact_email}'           => 'customer@example.com',
-            '{contact_phonenumber}'     => '+1 (000) 000-0000',
-            '{contact_title}'           => 'Job Title Here',
-            '{client_company}'          => 'Client Company',
-            '{client_phonenumber}'      => '+1 (000) 000-0000',
-            '{client_country}'          => 'Country Here',
-            '{client_city}'             => 'City Here',
-            '{client_zip}'              => 'Zip Here',
-            '{client_state}'            => 'State Here',
-            '{client_address}'          => '456 Client Street',
-            '{client_website}'          => 'https://client.example.com',
-            '{client_vat_number}'       => 'VAT-0000',
-            '{client_id}'               => 'CUST-001',
-            '{set_password_url}'        => site_url(),
-            '{email_verification_url}'  => site_url(),
-            '{reset_password_url}'      => site_url(),
-            '{contact_public_consent_url}' => site_url(),
-        ];
-
-        foreach ($lead_fields as $key => $val) {
-            $content = str_replace($key, $val, $content ?? '');
-        }
-
-        // Replace lead custom fields
-        $lead_custom_fields = get_custom_fields('leads', [], true);
-        foreach ($lead_custom_fields as $field) {
-            $placeholder = '{' . $field['slug'] . '}';
-            $content     = str_replace($placeholder, $field['name'] . ' Value', $content ?? '');
-        }
-
-        foreach ($other_fields as $key => $val) {
-            $content = str_replace($key, $val, $content ?? '');
-        }
-
-        foreach ($client_fields as $key => $val) {
-            $content = str_replace($key, $val, $content ?? '');
-        }
-
-        // Replace customer/contact custom fields
-        $customer_custom_fields = get_custom_fields('customers', [], true);
-        foreach ($customer_custom_fields as $field) {
-            $placeholder = '{' . $field['slug'] . '}';
-            $content     = str_replace($placeholder, $field['name'] . ' Value', $content ?? '');
         }
 
         return $content;
@@ -5305,15 +5097,6 @@ class Ma_model extends App_Model
 
         $message = $this->parse_content_merge_fields(json_decode($content ?? ''), $data, $log_id);
 
-        ma_debug_log('ma_send_email.start', [
-            'to' => $email,
-            'subject' => $subject,
-            'email_id' => $ma_email_object->id ?? null,
-            'campaign_id' => $data['campaign']->id ?? null,
-            'log_id' => $log_id,
-            'using_design_id' => $email_design_id,
-        ]);
-
         $from_name = get_option('companyname');
         if($ma_email_object->from_name != ''){
             $from_name = $ma_email_object->from_name;
@@ -5467,24 +5250,12 @@ class Ma_model extends App_Model
                 $this->db->update(db_prefix().'ma_email_logs', ['delivery' => 1, 'delivery_time' => date('Y-m-d H:i:s'), 'bcc_address' => $bcc_address != '' ? 1 : 0]);
             }
 
-            ma_debug_log('ma_send_email.success', [
-                'to' => $cnf['email'],
-                'subject' => $cnf['subject'],
-                'log_id' => $log_id,
-            ]);
-
             return true;
         }else{
             if($log_id != ''){
                 $this->db->where('id', $log_id);
                 $this->db->update(db_prefix().'ma_email_logs', ['failed' => 1, 'failed_time' => date('Y-m-d H:i:s')]);
             }
-
-            ma_debug_log('ma_send_email.failed', [
-                'to' => $cnf['email'],
-                'subject' => $cnf['subject'],
-                'log_id' => $log_id,
-            ]);
         }
 
         return false;
@@ -6463,23 +6234,8 @@ class Ma_model extends App_Model
 
             $total = $count + ($count_bcc * 2);
             if($total >= get_option('ma_email_limit')){
-                ma_debug_log('check_email_sending_limit.blocked', [
-                    'window_start' => $time,
-                    'count' => $count,
-                    'count_bcc' => $count_bcc,
-                    'total' => $total,
-                    'limit' => get_option('ma_email_limit'),
-                ]);
                 return false;
             }
-
-            ma_debug_log('check_email_sending_limit.allowed', [
-                'window_start' => $time,
-                'count' => $count,
-                'count_bcc' => $count_bcc,
-                'total' => $total,
-                'limit' => get_option('ma_email_limit'),
-            ]);
         }
         return true;
     }
@@ -6494,8 +6250,6 @@ class Ma_model extends App_Model
 
         unset($data_insert['id']);
         $data_insert['name'] = $data['name'];
-        // Ensure cloned campaign is inactive so it cant run immediately after cloning.
-        $data_insert['published'] = 0;
         $data_insert['addedfrom'] = get_staff_user_id();
         $data_insert['dateadded'] = date('Y-m-d H:i:s');
 
@@ -6539,13 +6293,6 @@ class Ma_model extends App_Model
         $content = $this->get_email_content_by_contact($ma_email_object->id, $data);
 
         $message = $this->parse_content_merge_fields(json_decode($content ?? ''), $data, $email_log['id']);
-
-        ma_debug_log('ma_send_email_limit.start', [
-            'log_id' => $email_log['id'],
-            'email_id' => $ma_email_object->id ?? null,
-            'to' => $email,
-            'campaign_id' => $email_log['campaign_id'] ?? null,
-        ]);
 
         $from_name = get_option('companyname');
         if($ma_email_object->from_name != ''){
@@ -6686,22 +6433,10 @@ class Ma_model extends App_Model
             $this->db->where('id', $email_log['id']);
             $this->db->update(db_prefix().'ma_email_logs', ['delivery' => 1, 'delivery_time' => date('Y-m-d H:i:s'), 'bcc_address' => $bcc_address != '' ? 1 : 0]);
 
-            ma_debug_log('ma_send_email_limit.success', [
-                'log_id' => $email_log['id'],
-                'to' => $cnf['email'],
-                'subject' => $cnf['subject'],
-            ]);
-
             return true;
         }else{
             $this->db->where('id', $email_log['id']);
             $this->db->update(db_prefix().'ma_email_logs', ['failed' => 1, 'failed_time' => date('Y-m-d H:i:s')]);
-
-            ma_debug_log('ma_send_email_limit.failed', [
-                'log_id' => $email_log['id'],
-                'to' => $cnf['email'],
-                'subject' => $cnf['subject'],
-            ]);
         }
 
         return false;
@@ -6710,26 +6445,14 @@ class Ma_model extends App_Model
     public function ma_cron_email_limit(){
         $this->db->where('delivery = 0 AND failed = 0 AND email IS NOT NULL');
         $email_logs = $this->db->get(db_prefix(). 'ma_email_logs')->result_array();
-
-        ma_debug_log('ma_cron_email_limit.start', [
-            'queue_size' => count($email_logs),
-        ]);
         
         foreach ($email_logs as $log) {
             if(!$this->check_email_sending_limit()){
-                ma_debug_log('ma_cron_email_limit.stop_limit', [
-                    'remaining_queue' => count($email_logs),
-                    'stopped_on_log_id' => $log['id'],
-                ]);
                 break;
             }
             
             $this->ma_send_email_limit($log);
         }
-
-        ma_debug_log('ma_cron_email_limit.end', [
-            'processed' => count($email_logs),
-        ]);
 
         return true;
     }
@@ -6854,8 +6577,6 @@ class Ma_model extends App_Model
         $data = [];
         $data['campaign'] = $campaign;
         $data['workflow'] = $workflow;
-        // mark test mode so merge fields can be filled with professional dummy data
-        $data['is_test'] = true;
         
         $campaign_test = $this->get_campaign_test($id);
         if($campaign_test){
