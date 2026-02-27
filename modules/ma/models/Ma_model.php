@@ -4620,6 +4620,16 @@ class Ma_model extends App_Model
      * @return string
      */
     public function parse_content_merge_fields($content, $data = [], $log_id = ''){
+        if(isset($data['campaign_test_dummy']) && $data['campaign_test_dummy'] === true){
+            $dummy_merge_fields = $this->get_campaign_test_dummy_merge_fields();
+
+            foreach ($dummy_merge_fields as $key => $val) {
+                if(stripos($content ?? '', $key) !== false){
+                    $content = str_replace($key, $val, $content ?? '');
+                }
+            }
+        }
+
         if (!class_exists('other_merge_fields', false)) {
             $this->load->library('merge_fields/other_merge_fields');
         }
@@ -4702,6 +4712,90 @@ class Ma_model extends App_Model
         }
 
         return $content;
+    }
+
+    /**
+     * Build dummy merge field values for campaign test emails so placeholders are visible.
+     */
+    protected function get_campaign_test_dummy_merge_fields()
+    {
+        $dummy = [];
+
+        $dummy = array_merge($dummy, [
+            '{lead_name}'               => 'Lead Name Here',
+            '{lead_first_name}'         => 'Lead First Name',
+            '{lead_last_name}'          => 'Lead Last Name',
+            '{lead_email}'              => 'lead@example.com',
+            '{lead_position}'           => 'Lead Position',
+            '{lead_company}'            => 'Lead Company',
+            '{lead_country}'            => 'Lead Country',
+            '{lead_zip}'                => '12345',
+            '{lead_city}'               => 'Lead City',
+            '{lead_state}'              => 'Lead State',
+            '{lead_address}'            => '123 Lead Street',
+            '{lead_assigned}'           => 'Lead Assigned Staff',
+            '{lead_status}'             => 'Lead Status',
+            '{lead_source}'             => 'Lead Source',
+            '{lead_phonenumber}'        => '1234567890',
+            '{lead_link}'               => site_url('leads'),
+            '{lead_website}'            => 'https://lead.example.com',
+            '{lead_description}'        => 'Lead description sample',
+            '{lead_public_form_url}'    => site_url('lead/form'),
+            '{lead_public_consent_url}' => site_url('lead/consent'),
+        ]);
+
+        $dummy = array_merge($dummy, [
+            '{contact_firstname}'        => 'Contact Firstname',
+            '{contact_lastname}'         => 'Contact Lastname',
+            '{contact_fullname}'         => 'Contact Fullname',
+            '{contact_email}'            => 'contact@example.com',
+            '{contact_phonenumber}'      => '5551234567',
+            '{contact_title}'            => 'Contact Title',
+            '{contact_public_consent_url}' => site_url('clients/consent'),
+            '{set_password_url}'         => site_url('clients/set-password'),
+            '{reset_password_url}'       => site_url('clients/reset-password'),
+            '{email_verification_url}'   => site_url('clients/verify-email'),
+            '{client_company}'           => 'Customer Company',
+            '{client_phonenumber}'       => '000-000-0000',
+            '{client_country}'           => 'Customer Country',
+            '{client_city}'              => 'Customer City',
+            '{client_state}'             => 'Customer State',
+            '{client_zip}'               => '90210',
+            '{client_address}'           => '123 Customer Street',
+            '{client_vat}'               => 'VAT-123456',
+            '{client_id}'                => 'CUST-001',
+            '{companyname}'              => get_option('companyname'),
+        ]);
+
+        if (!class_exists('leads_merge_fields', false)) {
+            $this->load->library('merge_fields/leads_merge_fields');
+        }
+        if (!class_exists('client_merge_fields', false)) {
+            $this->load->library('merge_fields/client_merge_fields');
+        }
+
+        foreach ([$this->leads_merge_fields, $this->client_merge_fields] as $mergeFieldLib) {
+            if (method_exists($mergeFieldLib, 'build')) {
+                foreach ($mergeFieldLib->build() as $field) {
+                    if (isset($field['key']) && $field['key'] != '' && !isset($dummy[$field['key']])) {
+                        $label = isset($field['name']) && $field['name'] != '' ? $field['name'] : trim($field['key'], '{}');
+                        $dummy[$field['key']] = $label.' Here';
+                    }
+                }
+            }
+        }
+
+        $lead_custom_fields = get_custom_fields('leads');
+        foreach ($lead_custom_fields as $field) {
+            $dummy['{' . $field['slug'] . '}'] = 'Lead '.$field['name'].' Here';
+        }
+
+        $customer_custom_fields = get_custom_fields('customers');
+        foreach ($customer_custom_fields as $field) {
+            $dummy['{' . $field['slug'] . '}'] = 'Customer '.$field['name'].' Here';
+        }
+
+        return $dummy;
     }
 
     /**
@@ -6672,6 +6766,7 @@ class Ma_model extends App_Model
         $data = [];
         $data['campaign'] = $campaign;
         $data['workflow'] = $workflow;
+        $data['campaign_test_dummy'] = true;
         
         $campaign_test = $this->get_campaign_test($id);
         if($campaign_test){
