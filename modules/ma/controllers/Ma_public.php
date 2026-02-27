@@ -67,14 +67,21 @@ class Ma_public extends ClientsController
         $url = $this->input->get('href');
         $confirm = $this->input->get('confirm');
         $data_update = ['click' => 1, 'click_time' => date("Y-m-d H:i:s")];
-        if($confirm != ''){
-            $data_update['confirm'] = $confirm;
-        }
 
         $this->db->where('hash', $hash);
         $email_log = $this->db->get(db_prefix() . 'ma_email_logs')->row();
 
         if($email_log){
+            // Treat a click as an open too (many clients block the tracking pixel)
+            if($email_log->open == 0){
+                $data_update['open']      = 1;
+                $data_update['open_time'] = date("Y-m-d H:i:s");
+            }
+
+            if($confirm != ''){
+                $data_update['confirm'] = $confirm;
+            }
+
             $this->db->where('hash', $hash);
             $this->db->where('click', 0);
             $this->db->update(db_prefix() . 'ma_email_logs', $data_update);
