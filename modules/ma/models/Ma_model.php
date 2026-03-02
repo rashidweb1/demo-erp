@@ -2354,6 +2354,25 @@ class Ma_model extends App_Model
                     break;
             }
         }else{
+            // For condition nodes that depend on contact behaviour (opens/clicks/etc)
+            // allow re-evaluation so late events can move the contact to the right branch.
+            $shouldReevaluate = $data['node']['class'] == 'condition'
+                && isset($data['node']['data']['track'])
+                && in_array($data['node']['data']['track'], ['delivery','opens','clicks','confirm']);
+
+            if($shouldReevaluate){
+                $newOutput = $this->handle_condition_node($data);
+                if($newOutput && $newOutput != $output){
+                    $this->update_workflow_node_log($data, $newOutput);
+                    $output = $newOutput;
+                    $this->log_campaign_debug(
+                        'ma.workflow.node.condition.recheck',
+                        'Condition node re-evaluated and route updated',
+                        $this->build_campaign_log_payload($data, ['existing_output' => $output])
+                    );
+                }
+            }
+
             $this->log_campaign_debug(
                 'ma.workflow.node.skip',
                 'Node already executed, using stored output route',
@@ -2416,7 +2435,7 @@ class Ma_model extends App_Model
                     $email = $this->get_email($data['node']['data']['email']);
                     $log_id = $this->save_email_log([
                         'lead_id' => (isset($data['lead']) ? $data['lead']['id'] : 0), 
-                        'client_id' => (isset($data['client']) ? $data['client']['userid'] : 0), 
+                        'client_id' => (isset($data['client']) ? ($data['client']['userid'] ?? ($data['client']['id'] ?? 0)) : 0), 
                         'email_id' => $email->id, 
                         'email_template_id' => $email->email_template, 
                         'campaign_id' => $data['campaign']->id,
@@ -2456,7 +2475,7 @@ class Ma_model extends App_Model
                                 $email = $this->get_email($data['node']['data']['email']);
                                 $log_id = $this->save_email_log([
                                     'lead_id' => (isset($data['lead']) ? $data['lead']['id'] : 0), 
-                                    'client_id' => (isset($data['client']) ? $data['client']['userid'] : 0), 
+                                    'client_id' => (isset($data['client']) ? ($data['client']['userid'] ?? ($data['client']['id'] ?? 0)) : 0), 
                                     'email_id' => $email->id, 
                                     'email_template_id' => $email->email_template, 
                                     'campaign_id' => $data['campaign']->id,
@@ -2480,7 +2499,7 @@ class Ma_model extends App_Model
                         $email = $this->get_email($data['node']['data']['email']);
                         $log_id = $this->save_email_log([
                             'lead_id' => (isset($data['lead']) ? $data['lead']['id'] : 0), 
-                            'client_id' => (isset($data['client']) ? $data['client']['userid'] : 0), 
+                            'client_id' => (isset($data['client']) ? ($data['client']['userid'] ?? ($data['client']['id'] ?? 0)) : 0), 
                             'email_id' => $email->id, 
                             'email_template_id' => $email->email_template, 
                             'campaign_id' => $data['campaign']->id,
@@ -2502,7 +2521,7 @@ class Ma_model extends App_Model
                         $email = $this->get_email($data['node']['data']['email']);
                         $log_id = $this->save_email_log([
                             'lead_id' => (isset($data['lead']) ? $data['lead']['id'] : 0), 
-                            'client_id' => (isset($data['client']) ? $data['client']['userid'] : 0), 
+                            'client_id' => (isset($data['client']) ? ($data['client']['userid'] ?? ($data['client']['id'] ?? 0)) : 0), 
                             'email_id' => $email->id, 
                             'email_template_id' => $email->email_template, 
                             'campaign_id' => $data['campaign']->id,
@@ -2855,7 +2874,8 @@ class Ma_model extends App_Model
             if(isset($data['lead'])){
                 $this->db->where('lead_id', $data['lead']['id']);
             }else{
-                $this->db->where('client_id', $data['client']['id']);
+                $clientId = $data['client']['userid'] ?? ($data['client']['id'] ?? 0);
+                $this->db->where('client_id', $clientId);
             }
             $this->db->where('node_id', $connection['node']);
             $logs = $this->db->get(db_prefix().'ma_campaign_flows')->row();
@@ -2960,7 +2980,8 @@ class Ma_model extends App_Model
         if(isset($data['lead'])){
             $this->db->where('lead_id', $data['lead']['id']);
         }else{
-            $this->db->where('client_id', $data['client']['userid']);
+            $clientId = $data['client']['userid'] ?? ($data['client']['id'] ?? 0);
+            $this->db->where('client_id', $clientId);
         }
 
         $this->db->where('node_id', $data['node']['id']);
@@ -2971,7 +2992,7 @@ class Ma_model extends App_Model
             $this->db->insert(db_prefix().'ma_campaign_flows', [
                 'campaign_id' => $data['campaign']->id, 
                 'lead_id' => (isset($data['lead']) ? $data['lead']['id'] : 0), 
-                'client_id' => (isset($data['client']) ? $data['client']['userid'] : 0), 
+                'client_id' => (isset($data['client']) ? ($data['client']['userid'] ?? ($data['client']['id'] ?? 0)) : 0), 
                 'node_id' => $data['node']['id'], 
                 'output' => $output, 
                 'dateadded' => date('Y-m-d H:i:s'), 
@@ -2991,7 +3012,8 @@ class Ma_model extends App_Model
         if(isset($data['lead'])){
             $this->db->where('lead_id', $data['lead']['id']);
         }else{
-            $this->db->where('client_id', $data['client']['id']);
+            $clientId = $data['client']['userid'] ?? ($data['client']['id'] ?? 0);
+            $this->db->where('client_id', $clientId);
         }
 
         $this->db->where('node_id', $data['node']['id']);
@@ -3002,6 +3024,28 @@ class Ma_model extends App_Model
         }
 
         return false;
+    }
+
+    /**
+     * Update an existing workflow node log (used when a condition outcome changes later).
+     */
+    public function update_workflow_node_log($data, $output){
+        $this->db->where('campaign_id', $data['campaign']->id);
+
+        if(isset($data['lead'])){
+            $this->db->where('lead_id', $data['lead']['id']);
+        }else{
+            $clientId = $data['client']['userid'] ?? ($data['client']['id'] ?? 0);
+            $this->db->where('client_id', $clientId);
+        }
+
+        $this->db->where('node_id', $data['node']['id']);
+        $this->db->update(db_prefix().'ma_campaign_flows', [
+            'output'    => $output,
+            'dateadded' => date('Y-m-d H:i:s'),
+        ]);
+
+        return true;
     }
 
     //send sms with setting
@@ -5458,7 +5502,8 @@ class Ma_model extends App_Model
         if(isset($data['lead'])){
             $this->db->where('lead_id', $data['lead']['id']);
         }else{
-            $this->db->where('client_id', $data['client']['id']);
+            $clientId = $data['client']['userid'] ?? ($data['client']['id'] ?? 0);
+            $this->db->where('client_id', $clientId);
         }
         $this->db->where('campaign_id', $data['campaign']->id);
         $this->db->where('email_id', $email_id);
