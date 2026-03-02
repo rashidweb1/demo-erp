@@ -2493,20 +2493,23 @@ class Ma_model extends App_Model
 
                     break;
                 case 'exact_time':
-                    $time = date('Y-m-d H:i:s', strtotime(date('Y-m-d').' '.$data['node']['data']['exact_time']));
 
-                    if(date('Y-m-d H:i:s') >= $time){
+                    $scheduledAt = strtotime(date('Y-m-d') . ' ' . $data['node']['data']['exact_time']);
+                    $now = time();
+
+                    if ($scheduledAt && $now >= $scheduledAt) {
+
                         $email = $this->get_email($data['node']['data']['email']);
                         $log_id = $this->save_email_log([
-                            'lead_id' => (isset($data['lead']) ? $data['lead']['id'] : 0), 
-                            'client_id' => (isset($data['client']) ? ($data['client']['userid'] ?? ($data['client']['id'] ?? 0)) : 0), 
-                            'email_id' => $email->id, 
-                            'email_template_id' => $email->email_template, 
+                            'lead_id' => isset($data['lead']) ? $data['lead']['id'] : 0,
+                            'client_id' => isset($data['client']) ? ($data['client']['userid'] ?? ($data['client']['id'] ?? 0)) : 0,
+                            'email_id' => $email->id,
+                            'email_template_id' => $email->email_template,
                             'campaign_id' => $data['campaign']->id,
                             'email' => $data['contact']['email'],
                         ]);
 
-                        if($testing || get_option('ma_email_sending_limit') != 1){
+                        if ($testing || get_option('ma_email_sending_limit') != 1) {
                             $success = $this->ma_send_email($data['contact']['email'], $email, $data, $log_id);
                         }
 
@@ -2515,26 +2518,26 @@ class Ma_model extends App_Model
 
                     break;
                 case 'exact_time_and_date':
-                    $time = $data['node']['data']['exact_time_and_date'];
-
-                    if(date('Y-m-d H:i:s') >= $time){
+                    $scheduledAt = strtotime($data['node']['data']['exact_time_and_date']);
+                    $now = time();
+                    if ($scheduledAt && $now >= $scheduledAt) {
                         $email = $this->get_email($data['node']['data']['email']);
                         $log_id = $this->save_email_log([
-                            'lead_id' => (isset($data['lead']) ? $data['lead']['id'] : 0), 
-                            'client_id' => (isset($data['client']) ? ($data['client']['userid'] ?? ($data['client']['id'] ?? 0)) : 0), 
-                            'email_id' => $email->id, 
-                            'email_template_id' => $email->email_template, 
+                            'lead_id' => isset($data['lead']) ? $data['lead']['id'] : 0,
+                            'client_id' => isset($data['client']) ? ($data['client']['userid'] ?? ($data['client']['id'] ?? 0)) : 0,
+                            'email_id' => $email->id,
+                            'email_template_id' => $email->email_template,
                             'campaign_id' => $data['campaign']->id,
                             'email' => $data['contact']['email'],
                         ]);
 
-                        if($testing || get_option('ma_email_sending_limit') != 1){
+                        if ($testing || get_option('ma_email_sending_limit') != 1) {
                             $success = $this->ma_send_email($data['contact']['email'], $email, $data, $log_id);
                         }
 
                         return true;
                     }
-                    
+
                     break;
                 
                 default:
